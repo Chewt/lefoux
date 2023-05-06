@@ -60,16 +60,16 @@ typedef uint32_t Move;
 #define getweight(x) ((int8_t)(0xFF & (x >> 19)))
 
 // Extract source location from move
-#define getsrc(x)    ((int8_t)(0x3F & (x >> 13)))
+#define getsrc(x)    ((uint8_t)(0x3F & (x >> 13)))
 
 // Extract destination location from move
-#define getdst(x)    ((int8_t)(0x3F & (x >>  7)))
+#define getdst(x)    ((uint8_t)(0x3F & (x >>  7)))
 
 // Extract piece type from move
-#define getpiece(x)  ((int8_t)(0x07 & (x >>  4)))
+#define getpiece(x)  ((uint8_t)(0x07 & (x >>  4)))
 
 // Extract promotion piece from move
-#define getprom(x)   ((int8_t)(0x07 & (x >>  1)))
+#define getprom(x)   ((uint8_t)(0x07 & (x >>  1)))
 
 // getcol(x) defined earlier in file works on move type as well
 
