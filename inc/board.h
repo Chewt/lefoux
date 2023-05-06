@@ -6,21 +6,18 @@
 /******************************************************************************
  * Contains all the necessary information for a given position.
  *
- * pieces is an array of bitboards, one for each piece for each color.
- *
- * info contains extra information about the board and is arranged like so:
+ * - pieces is an array of bitboards, one for each piece for each color.
+ * - info contains extra information about the board and is arranged like so:
  *
  * | En passant  | Castling  | Color to play
  * +---------------------------------+
  * | 6 bits      | 4 bits    | 1 bit |  
  * +---------------------------------+
- * The first 5 bits are not used
+ * The first 5 bits are not used.
  *
- * En passant: describes where an en passant play can happen if at all.
- *
- * Castling: describes which castling options are still possible.
- *
- * Color: to play describes whether it is black or white to play.
+ * - En passant describes where an en passant play can happen if at all.
+ * - Castling describes which castling options are still possible.
+ * - Color to play describes whether it is black or white to play.
  *****************************************************************************/
 typedef struct
 {
@@ -48,6 +45,7 @@ typedef struct
  * +-----------------------------------------------------------------------+
  * | 8 bits        | 6 bits      | 6 bits      | 3 bit   | 3 bit   | 1 bit |  
  * +-----------------------------------------------------------------------+
+ * The first 5 bits are not used.
  *
  * - Weight is the calculated strength of the move.
  * - Source is the source location of the piece that will move
@@ -58,11 +56,21 @@ typedef struct
  *****************************************************************************/
 typedef uint32_t Move;
 
+// Extract move weight
 #define getweight(x) ((int8_t)(0xFF & (x >> 19)))
+
+// Extract source location from move
 #define getsrc(x)    ((int8_t)(0x3F & (x >> 13)))
+
+// Extract destination location from move
 #define getdst(x)    ((int8_t)(0x3F & (x >>  7)))
+
+// Extract piece type from move
 #define getpiece(x)  ((int8_t)(0x07 & (x >>  4)))
+
+// Extract promotion piece from move
 #define getprom(x)   ((int8_t)(0x07 & (x >>  1)))
-// getcol(x) defined earlier in file
+
+// getcol(x) defined earlier in file works on move type as well
 
 #endif /* end of include guard: BOARD_H */
