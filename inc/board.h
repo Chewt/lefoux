@@ -2,16 +2,19 @@
 #define BOARD_H
 #include <stdint.h>
 
+#define MAX_MOVES_PER_POSITION 218
 
 /******************************************************************************
  * Contains all the necessary information for a given position.
  *
  * - pieces is an array of bitboards, one for each piece for each color.
+ *   pieces is indexed with the piece type and color added together, for
+ *   example: board.pieces[PAWN + WHITE] gives the white pawns bitboard
  * - info contains extra information about the board and is arranged like so:
  *
  * | En passant  | Castling  | Color to play
  * +---------------------------------+
- * | 6 bits      | 4 bits    | 1 bit |  
+ * | 6 bits      | 4 bits    | 1 bit |
  * +---------------------------------+
  * The first 5 bits are not used.
  *
@@ -25,6 +28,20 @@ typedef struct
     uint16_t info;
 } Board;
 
+enum {
+   PAWN = 0,
+   KNIGHT,
+   BISHOP,
+   ROOK,
+   QUEEN,
+   KING
+};
+
+enum {
+   WHITE = 0,
+   BLACK = 7
+};
+
 // Extract en passant from info
 #define bgetenp(x) ((uint8_t)(0x3F & (x >> 5)))
 
@@ -34,15 +51,14 @@ typedef struct
 // Extract color to play from info.
 #define bgetcol(x) ((uint8_t)(0x01 & x))
 
-
 /******************************************************************************
  * Move information stored in a single 32 bit integer
- * 
+ *
  * Information is laid out like so:
  *
  * | Weight        | Source      | Destination | Piece   | Promote | Color
  * +-----------------------------------------------------------------------+
- * | 8 bits        | 6 bits      | 6 bits      | 3 bit   | 3 bit   | 1 bit |  
+ * | 8 bits        | 6 bits      | 6 bits      | 3 bit   | 3 bit   | 1 bit |
  * +-----------------------------------------------------------------------+
  * The first 5 bits are not used.
  *
@@ -57,6 +73,8 @@ typedef uint32_t Move;
 
 // Extract move weight
 #define mgetweight(x) ((int8_t)(0xFF & (x >> 19)))
+// Returns a move with the weight set
+#define msetweight(m, v) ((Move)(m | ((0xFF & v) << 19))
 
 // Extract source location from move
 #define mgetsrc(x)    ((uint8_t)(0x3F & (x >> 13)))
