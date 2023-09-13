@@ -21,6 +21,9 @@
  * - En passant describes where an en passant play can happen if at all.
  * - Castling describes which castling options are still possible.
  * - Color to play describes whether it is black or white to play.
+ * - The square a1 is bitboard & 1, b1 is bitboard & 2, ...,
+ *   a2 is bitboard & 0x0100, b2 is bitboard & 0x0200, ..., g8 is
+ *   bitboard & 0x4000000000000000, h8 is bitboard & 0x8000000000000000
  *****************************************************************************/
 typedef struct
 {
@@ -74,7 +77,7 @@ typedef uint32_t Move;
 // Extract move weight
 #define mgetweight(x) ((int8_t)(0xFF & (x >> 19)))
 // Returns a move with the weight set
-#define msetweight(m, v) ((Move)(m | ((0xFF & v) << 19))
+#define msetweight(m, v) ((Move)(m | ((0xFF & v) << 19)))
 
 // Extract source location from move
 #define mgetsrc(x)    ((uint8_t)(0x3F & (x >> 13)))
@@ -90,5 +93,10 @@ typedef uint32_t Move;
 
 // Extract color to play from move.
 #define mgetcol(x)    ((uint8_t)(0x01 & x))
+
+
+Move find_best_move(Board* board, uint8_t depth);
+int8_t evaluateBoard(Board* board);
+
 
 #endif /* end of include guard: BOARD_H */

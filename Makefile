@@ -4,16 +4,16 @@ INCLUDEDIR = inc
 SOURCES = $(wildcard $(SRCDIR)/*.c)
 OBJECTS = $(SOURCES:$(SRCDIR)%.c=$(OBJDIR)%.o)
 INCLUDES = $(SOURCES:$(SRCDIR)%.c=$(INCLUDEDIR)%.h)
-UNIDEPS = 
-CFLAGS = -I$(INCLUDEDIR) -O2
+UNIDEPS =
+CFLAGS = -I$(INCLUDEDIR) -O2 -fopenmp
 CC = gcc
 TARGET = lefoux
 
-.PHONY: all 
+.PHONY: all
 all: $(TARGET)
 
 .PHONY: debug
-debug: CFLAGS += -g
+debug: CFLAGS += -g -DDEBUG
 debug: clean all
 
 $(TARGET): $(OBJECTS)
@@ -29,5 +29,5 @@ $(UNIDEPS):
 	@touch $@
 
 .PHONY: clean
-clean: 
+clean:
 	rm -rf $(OBJDIR)/*.o $(TARGET)
