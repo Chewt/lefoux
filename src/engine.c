@@ -4,14 +4,7 @@
 #include <string.h>     // memcpy()
 
 #include "board.h"
-
-// Helper function that counts the number of bits
-inline int8_t getNumBits(uint64_t x)
-{
-   int8_t numBits = 0;
-   while (x = x & (x-1)) numBits++;
-   return numBits;
-}
+#include "bitHelpers.h"
 
 /*
  * Returns the net weight of pieces on the board. A positive number

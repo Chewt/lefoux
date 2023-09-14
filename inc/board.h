@@ -1,5 +1,6 @@
 #ifndef BOARD_H
 #define BOARD_H
+
 #include <stdint.h>
 
 #define MAX_MOVES_PER_POSITION 218
@@ -40,10 +41,37 @@ enum {
    KING
 };
 
-enum {
+
+typedef enum {
+   WHITE_PAWN = 0,
+   WHITE_KNIGHT,
+   WHITE_BISHOP,
+   WHITE_ROOK,
+   WHITE_QUEEN,
+   WHITE_KING,
+   BLACK_PAWN,
+   BLACK_KNIGHT,
+   BLACK_BISHOP,
+   BLACK_ROOK,
+   BLACK_QUEEN,
+   BLACK_KING
+} enumPiece;
+
+typedef enum {
    WHITE = 0,
    BLACK = 7
-};
+} enumColor;
+
+typedef enum {
+    A1 = 0, B1, C1, D1, E1, F1, G1, H1,
+    A2, B2, C2, D2, E2, F2, G2, H2,
+    A3, B3, C3, D3, E3, F3, G3, H3,
+    A4, B4, C4, D4, E4, F4, G4, H4,
+    A5, B5, C5, D5, E5, F5, G5, H5,
+    A6, B6, C6, D6, E6, F6, G6, H6,
+    A7, B7, C7, D7, E7, F7, G7, H7,
+    A8, B8, C8, D8, E8, F8, G8, H8
+} enumSquare;
 
 // Extract en passant from info
 #define bgetenp(x) ((uint8_t)(0x3F & (x >> 5)))
@@ -94,9 +122,35 @@ typedef uint32_t Move;
 // Extract color to play from move.
 #define mgetcol(x)    ((uint8_t)(0x01 & x))
 
+/* Constants for piece attacks */
+const uint64_t RDIAG;
+const uint64_t LDIAG;
+const uint64_t VERT ;
+const uint64_t HORZ ;
+const uint64_t NMOV ;
+const uint64_t KMOV ;
+const uint64_t PATTK;
 
-Move find_best_move(Board* board, uint8_t depth);
-int8_t evaluateBoard(Board* board);
+#define AFILE FILELIST[0]
+#define HFILE FILELIST[7]
+const uint64_t FILELIST[8];
 
+const uint64_t RANK[8];
+
+typedef struct {
+    uint64_t mask;
+    uint64_t magic;
+} Magic;
+
+const Magic magicBishop[64];
+const Magic magicRook[64];
+
+const uint64_t magicBishopAttacks[64][512];
+const uint64_t magicRookAttacks[64][4096];
+
+uint64_t magicLookupBishop(uint64_t occupancy, enumSquare square);
+uint64_t magicLookupRook(uint64_t occupancy, enumSquare square);
+
+uint64_t getMoves(enumPiece, uint64_t pieces, uint64_t friends, uint64_t foes);
 
 #endif /* end of include guard: BOARD_H */
