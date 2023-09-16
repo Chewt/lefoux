@@ -122,31 +122,31 @@ typedef uint32_t Move;
 // Extract color to play from move.
 #define mgetcol(x)    ((uint8_t)(0x01 & x))
 
-/* Constants for piece attacks */
-const uint64_t RDIAG;
-const uint64_t LDIAG;
-const uint64_t VERT ;
-const uint64_t HORZ ;
-const uint64_t NMOV ;
-const uint64_t KMOV ;
-const uint64_t PATTK;
+/* Constants for piece attacks, defined in board.c */
+extern const uint64_t RDIAG;
+extern const uint64_t LDIAG;
+extern const uint64_t VERT ;
+extern const uint64_t HORZ ;
+extern const uint64_t NMOV ;
+extern const uint64_t KMOV ;
+extern const uint64_t PATTK;
 
 #define AFILE FILELIST[0]
 #define HFILE FILELIST[7]
-const uint64_t FILELIST[8];
+extern const uint64_t FILELIST[8];
 
-const uint64_t RANK[8];
+extern const uint64_t RANK[8];
 
 typedef struct {
     uint64_t mask;
     uint64_t magic;
 } Magic;
 
-const Magic magicBishop[64];
-const Magic magicRook[64];
+extern const Magic magicBishop[64];
+extern const Magic magicRook[64];
 
-const uint64_t magicBishopAttacks[64][512];
-const uint64_t magicRookAttacks[64][4096];
+extern const uint64_t magicBishopAttacks[64][512];
+extern const uint64_t magicRookAttacks[64][4096];
 
 uint64_t magicLookupBishop(uint64_t occupancy, enumSquare square);
 uint64_t magicLookupRook(uint64_t occupancy, enumSquare square);

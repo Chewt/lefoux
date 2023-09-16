@@ -34,6 +34,11 @@ const uint64_t RANK[8] = {
     0xFF00000000000000ULL
 };
 
+const Magic magicBishop[64] = {0};
+const Magic magicRook[64] = {0};
+const uint64_t magicRookAttacks[64][4096] = {0};
+const uint64_t magicBishopAttacks[64][512] = {0};
+
 /**
  * Pseudo rotate a bitboard 45 degree clockwise.
  * Main Diagonal is mapped to 1st rank
@@ -97,7 +102,7 @@ uint64_t getMoves(enumPiece type, uint64_t pieces, uint64_t friends, uint64_t fo
     int i;
     enumSquare square;
     // Isolate a piece to process, loop while there is a piece
-    while (piece = pieces & -pieces) {
+    while (piece &= -pieces) {
         switch(type) {
           case WHITE_PAWN:
           case BLACK_PAWN:
