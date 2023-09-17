@@ -142,15 +142,20 @@ typedef struct {
     uint64_t magic;
 } Magic;
 
-const Magic magicBishop[64];
-const Magic magicRook[64];
+Magic magicBishop[64];
+Magic magicRook[64];
 
-const uint64_t magicBishopAttacks[64][512];
-const uint64_t magicRookAttacks[64][4096];
+uint64_t magicBishopAttacks[64][512];
+uint64_t magicRookAttacks[64][4096];
 
 uint64_t magicLookupBishop(uint64_t occupancy, enumSquare square);
 uint64_t magicLookupRook(uint64_t occupancy, enumSquare square);
 
 uint64_t getMoves(enumPiece, uint64_t pieces, uint64_t friends, uint64_t foes);
+
+void print_bitboard(uint64_t bb);
+
+int computeRookMagic();
+int computeBishopMagic();
 
 #endif /* end of include guard: BOARD_H */

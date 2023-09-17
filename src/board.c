@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stdio.h>
 
 #include "board.h"
 #include "bitHelpers.h"
@@ -107,20 +108,16 @@ uint64_t getMoves(enumPiece type, uint64_t pieces, uint64_t friends, uint64_t fo
           case BLACK_KNIGHT:
             rank = square / 8 - C3 / 8;
             file = square % 8 - C3 % 8;
-            attacks = 1 << C3;
-            for (i=C3/8; i<rank; i++){
+            attacks = NMOV;
+            for (i=C3/8; i<rank; i++)
                 attacks <<= 8;
-            }
-            for (i=C3/8; i>rank; i--){
+            for (i=C3/8; i>rank; i--)
                 attacks >>= 8;
-            }
             // ~HFILE and ~AFILE prevent wrap-around
-            for (i=C3%8; i<file; i++){
+            for (i=C3%8; i<file; i++)
                 attacks = (attacks << 1) & ~HFILE;
-            }
-            for (i=C3%8; i>file; i--){
+            for (i=C3%8; i>file; i--)
                 attacks = (attacks >> 1) & ~AFILE;
-            }
             bitmap |= attacks ^ (attacks & friends);
             return bitmap;
 
@@ -151,20 +148,16 @@ uint64_t getMoves(enumPiece type, uint64_t pieces, uint64_t friends, uint64_t fo
           case BLACK_KING:
             rank = square / 8 - B2 / 8;
             file = square % 8 - B2 % 8;
-            attacks = 1 << B2;
-            for (i=B2/8; i<rank; i++){
+            attacks = KMOV;
+            for (i=B2/8; i<rank; i++)
                 attacks <<= 8;
-            }
-            for (i=B2/8; i>rank; i--){
+            for (i=B2/8; i>rank; i--)
                 attacks >>= 8;
-            }
             // ~HFILE and ~AFILE prevent wrap-around
-            for (i=B2%8; i<file; i++){
+            for (i=B2%8; i<file; i++)
                 attacks = (attacks << 1) & ~HFILE;
-            }
-            for (i=B2%8; i>file; i--){
+            for (i=B2%8; i>file; i--)
                 attacks = (attacks >> 1) & ~AFILE;
-            }
             bitmap |= attacks ^ (attacks & friends);
             break;
 
@@ -175,4 +168,20 @@ uint64_t getMoves(enumPiece type, uint64_t pieces, uint64_t friends, uint64_t fo
         pieces ^= piece;
     }
     return bitmap;
+}
+
+void print_bitboard(uint64_t bb)
+{
+    char *rankLabels = "abcdefgh";
+    for (int rank=7; rank >= 0; rank--)
+    {
+        printf("%c  ", rankLabels[rank]);
+        for (int file=0; file < 8; file++)
+        {
+            int bit = (bb >> (rank*8 + file)) & 1;
+            printf("%d ", bit);
+        }
+        printf("\n");
+    }
+    printf("\n   1 2 3 4 5 6 7 8\n\n");
 }

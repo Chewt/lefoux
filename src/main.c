@@ -2,6 +2,7 @@
 #include <omp.h>
 
 #include "bitHelpers.h"
+#include "board.h"
 #define NUM_THREADS 1
 
 void tests();
@@ -16,6 +17,9 @@ int main()
 #endif
 
     omp_set_num_threads(NUM_THREADS);
+
+    // computeRookMagic();
+    // computeBishopMagic();
 
 #ifdef DEBUG
     tests();
@@ -60,6 +64,7 @@ void tests()
     RUN_TEST( shiftWrapLeft( 0xFF00000000000000UL, 8 ), uint64_t_res, "%lx", 0xFFUL);
     RUN_TEST( shiftWrapRight( 0xFFUL, 8 ), uint64_t_res, "%lx", 0xFF00000000000000UL);
     RUN_TEST( getNumBits( 0xFFULL ), int_res, "%d", 8 );
+    RUN_TEST( getNumBits( 0ULL ), int_res, "%d", 0 );
 
     fprintf(stderr, "Tests passed: %s%d%s of %d\n",
             good, pass, clear, pass + fail);
