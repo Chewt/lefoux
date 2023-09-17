@@ -15,6 +15,7 @@ all: $(TARGET)
 .PHONY: debug
 debug: CFLAGS += -g -DDEBUG
 debug: clean all
+debug: $(TARGET)
 
 $(TARGET): $(OBJECTS)
 	$(CC) $(OBJECTS) $(CFLAGS) -o $(TARGET)

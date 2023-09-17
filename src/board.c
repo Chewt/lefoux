@@ -175,7 +175,7 @@ uint64_t getMoves(enumPiece type, uint64_t pieces, uint64_t friends, uint64_t fo
     return bitmap;
 }
 
-void print_bitboard(uint64_t bb)
+void printBitboard(uint64_t bb)
 {
     char *rankLabels = "abcdefgh";
     for (int rank=7; rank >= 0; rank--)

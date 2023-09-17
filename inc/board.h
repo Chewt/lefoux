@@ -150,7 +150,7 @@ uint64_t magicLookupRook(uint64_t occupancy, enumSquare square);
 
 uint64_t getMoves(enumPiece, uint64_t pieces, uint64_t friends, uint64_t foes);
 
-void print_bitboard(uint64_t bb);
+void printBitboard(uint64_t bb);
 
 int computeRookMagic();
 int computeBishopMagic();
