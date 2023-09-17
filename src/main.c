@@ -1,13 +1,40 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <omp.h>
+#include <argp.h>
 
 #include "bitHelpers.h"
 #include "board.h"
 #define NUM_THREADS 1
 
-void tests();
+int tests();
 
-int main()
+/* argp struct */
+struct flags {
+
+};
+
+const char *argp_program_bug_address = "https://github.com/Chewt/lefoux/issues";
+#ifdef VERSION
+const char *argp_program_version = VERSION;
+#endif
+
+/* Parse Arguments */
+static int parse_opt (int key, char *arg, struct argp_state *state)
+{
+    struct flags* flags = state->input;
+    int result;
+    switch(key)
+    {
+        case 500:
+            // Program should return non-zero if a test fails
+            result = tests();
+            if (result) exit(result);
+    }
+    return 0;
+}
+
+int main(int argc, char** argv)
 {
 #ifdef _OPENMP
 	fprintf( stderr, "OpenMP is supported -- version = %d\n", _OPENMP );
@@ -16,19 +43,29 @@ int main()
     return 1;
 #endif
 
+    /* Command line args */
+    struct flags flags;
+    struct argp_option options[] = {
+        {"test", 500, 0, 0, "Run unit tests"},
+        { 0 }
+    };
+    struct argp argp = {options, parse_opt, 0, "Multithreaded chess engine.",
+                        0,       0,         0};
+    if (argp_parse(&argp, argc, argv, 0, 0, &flags))
+    {
+        fprintf(stderr, "Error parsing arguments\n");
+        exit(-1);
+    }
+
     omp_set_num_threads(NUM_THREADS);
 
     // computeRookMagic();
     // computeBishopMagic();
 
-#ifdef DEBUG
-    tests();
-#endif
-
     return 0;
 }
 
-void tests()
+int tests()
 {
     int pass = 0;
     int fail = 0;
@@ -64,8 +101,10 @@ void tests()
     RUN_TEST( shiftWrapLeft( 0xFF00000000000000UL, 8 ), uint64_t_res, "%lx", 0xFFUL);
     RUN_TEST( shiftWrapRight( 0xFFUL, 8 ), uint64_t_res, "%lx", 0xFF00000000000000UL);
     RUN_TEST( getNumBits( 0xFFULL ), int_res, "%d", 8 );
-    RUN_TEST( getNumBits( 0ULL ), int_res, "%d", 0 );
+    RUN_TEST( getNumBits( 0ULL ), int_res, "%d", 101010 );
 
     fprintf(stderr, "Tests passed: %s%d%s of %d\n",
             good, pass, clear, pass + fail);
+
+    return fail;
 }
