@@ -32,6 +32,10 @@ typedef struct
     uint16_t info;
 } Board;
 
+/*
+ * @brief enum for piece types. Can be combined with color using '+' i.e.
+ * PAWN + WHITE
+ */
 enum {
    PAWN = 0,
    KNIGHT,
@@ -41,27 +45,18 @@ enum {
    KING
 };
 
-
-typedef enum {
-   WHITE_PAWN = 0,
-   WHITE_KNIGHT,
-   WHITE_BISHOP,
-   WHITE_ROOK,
-   WHITE_QUEEN,
-   WHITE_KING,
-   BLACK_PAWN,
-   BLACK_KNIGHT,
-   BLACK_BISHOP,
-   BLACK_ROOK,
-   BLACK_QUEEN,
-   BLACK_KING
-} enumPiece;
-
+/*
+ * @brief enum for piece colors. Can be combined with piece type using '+' i.e.
+ * PAWN + WHITE
+ */
 typedef enum {
    WHITE = 0,
    BLACK = 7
 } enumColor;
 
+/*
+ * @brief enum for piece squares
+ */
 typedef enum {
     A1 = 0, B1, C1, D1, E1, F1, G1, H1,
     A2, B2, C2, D2, E2, F2, G2, H2,
@@ -135,11 +130,36 @@ extern const uint64_t PATTK;  // b2
 extern const uint64_t FILELIST[8];
 extern const uint64_t RANK[8];
 
+/*
+ * magicLookupBishop
+ * @param occupancy a bitboard of all of the pieces
+ * @param square the square the attacking bishop is attacking from
+ * @return bitboard of all attacks that bishop can make
+ */
 uint64_t magicLookupBishop(uint64_t occupancy, enumSquare square);
+/*
+ * magicLookupRook
+ * @param occupancy a bitboard of all of the pieces
+ * @param square the square the attacking rook is attacking from
+ * @return bitboard of all attacks that rook can make
+ */
 uint64_t magicLookupRook(uint64_t occupancy, enumSquare square);
 
-uint64_t getMoves(enumPiece, uint64_t pieces, uint64_t friends, uint64_t foes);
+/*
+ * getMoves
+ * @param type the type of piece in parameter pieces
+ * @param pieces a bitboard of all of the friendly pieces of the type specified
+ *   in parameter type
+ * @param friends a bitboard of all of the friendly pieces
+ * @param foes a bitboard of all of the enemy pieces
+ * @return bitboard of all possible moves this piece can make
+ */
+uint64_t getMoves(enumPiece type, uint64_t pieces, uint64_t friends, uint64_t foes);
 
+/*
+ * printBitboard
+ * @param bb a bitboard to print to stdout
+ */
 void printBitboard(uint64_t bb);
 
 #endif /* end of include guard: BOARD_H */

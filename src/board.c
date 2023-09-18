@@ -109,12 +109,12 @@ uint64_t getMoves(enumPiece type, uint64_t pieces, uint64_t friends, uint64_t fo
     while ((piece = pieces & -pieces)) {
         square = bitScanForward(piece);
         switch(type) {
-          case WHITE_PAWN:
-          case BLACK_PAWN:
+          case PAWN + WHITE:
+          case PAWN + BLACK:
             break;
 
-          case WHITE_KNIGHT:
-          case BLACK_KNIGHT:
+          case KNIGHT + WHITE:
+          case KNIGHT + BLACK:
             rank = square / 8 - C3 / 8;
             file = square % 8 - C3 % 8;
             attacks = NMOV;
@@ -130,28 +130,28 @@ uint64_t getMoves(enumPiece type, uint64_t pieces, uint64_t friends, uint64_t fo
             bitmap |= attacks ^ (attacks & friends);
             break;
 
-          case WHITE_BISHOP:
-          case BLACK_BISHOP:
+          case BISHOP + WHITE:
+          case BISHOP + BLACK:
             attacks = magicLookupBishop((friends | foes), square);
             bitmap |= attacks ^ (attacks & friends);
             break;
 
-          case WHITE_ROOK:
-          case BLACK_ROOK:
+          case ROOK + WHITE:
+          case BISHOP + BLACK:
             attacks = magicLookupRook((friends | foes), square);
             bitmap |= attacks ^ (attacks & friends);
             break;
 
-          case WHITE_QUEEN:
-          case BLACK_QUEEN:
+          case QUEEN + WHITE:
+          case QUEEN + BLACK:
             attacks = magicLookupRook((friends | foes), square);
             bitmap |= attacks ^ (attacks & friends);
             attacks = magicLookupBishop((friends | foes), square);
             bitmap |= attacks ^ (attacks & friends);
             break;
 
-          case WHITE_KING:
-          case BLACK_KING:
+          case KING + WHITE:
+          case KING + BLACK:
             rank = square / 8 - B2 / 8;
             file = square % 8 - B2 % 8;
             attacks = KMOV;
@@ -178,10 +178,9 @@ uint64_t getMoves(enumPiece type, uint64_t pieces, uint64_t friends, uint64_t fo
 
 void printBitboard(uint64_t bb)
 {
-    char *rankLabels = "abcdefgh";
     for (int rank=7; rank >= 0; rank--)
     {
-        printf("%c  ", rankLabels[rank]);
+        printf("%c  ", 'a' + rank);
         for (int file=0; file < 8; file++)
         {
             int bit = (bb >> (rank*8 + file)) & 1;

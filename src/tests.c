@@ -4,6 +4,10 @@
 #include "board.h"
 #include "bitHelpers.h"
 
+/*
+ * tests
+ * @brief runs a series of tests
+ * @return number of tests that failed
 int tests()
 {
     int pass = 0;
@@ -18,6 +22,15 @@ int tests()
     int int_res;
     uint64_t uint64_t_res;
 
+    /*
+     * RUN_TEST
+     * @brief macro to quickly create a test.
+     * @param testCode literal code to run in the test
+     * @param resultVar an already declared variable to store result of testCode
+     *   into.
+     * @param resultFmt a printf format specifier for resultVar
+     * @param expected the expected value, compared to resultVar
+     */
 #define RUN_TEST( testCode, resultVar, resultFmt, expected ) { \
     name = #testCode; \
     if (( resultVar = (testCode) ) == ( expected )) \
@@ -39,6 +52,16 @@ int tests()
         fail++; \
     } \
 }
+
+    /*
+     * RUN_TEST_FMT
+     * @brief macro to quickly create a test with custom resultVar formatting
+     * @param testCode literal code to run in the test
+     * @param resultVar an already declared variable to store result of testCode
+     *   into.
+     * @param resultFmt a function that formats resultVar and expected.
+     * @param expected the expected value, compared to resultVar
+     */
 #define RUN_TEST_FMT( testCode, resultVar, resultFmt, expected ) { \
     name = #testCode; \
     if (( resultVar = (testCode) ) == (expected) ) \
