@@ -32,6 +32,62 @@ int uci(Board* board, char* command)
     return 1;
 }
 
+int position(Board* board, char* command)
+{
+    char* s = "command not yet implemented\n";
+    if (write(1, s, strlen(s)) == -1)
+        printf("WHAT?!? there was an error\n");
+    return 1;
+}
+
+int go(Board* board, char* command)
+{
+    char* s = "command not yet implemented\n";
+    if (write(1, s, strlen(s)) == -1)
+        printf("WHAT?!? there was an error\n");
+    return 1;
+}
+
+int debug(Board* board, char* command)
+{
+    char* s = "command not yet implemented\n";
+    if (write(1, s, strlen(s)) == -1)
+        printf("WHAT?!? there was an error\n");
+    return 1;
+}
+
+int setoption(Board* board, char* command)
+{
+    char* s = "command not yet implemented\n";
+    if (write(1, s, strlen(s)) == -1)
+        printf("WHAT?!? there was an error\n");
+    return 1;
+}
+
+int ucinewgame(Board* board, char* command)
+{
+    char* s = "command not yet implemented\n";
+    if (write(1, s, strlen(s)) == -1)
+        printf("WHAT?!? there was an error\n");
+    return 1;
+}
+
+int stop(Board* board, char* command)
+{
+    char* s = "command not yet implemented\n";
+    if (write(1, s, strlen(s)) == -1)
+        printf("WHAT?!? there was an error\n");
+    return 1;
+}
+
+int ponderhit(Board* board, char* command)
+{
+    char* s = "command not yet implemented\n";
+    if (write(1, s, strlen(s)) == -1)
+        printf("WHAT?!? there was an error\n");
+    return 1;
+}
+
 /* This struct holds all of the commands that are accepted by lefoux. The format
  * for this struct is a keyword to match, that is the first word in the command,
  * and a function pointer to be called if the command matches the keyword. The
@@ -40,6 +96,13 @@ int uci(Board* board, char* command)
 Command allcommands[] = {
     {"isready", isready},
     {"uci", uci},
+    {"position", position},
+    {"go", go},
+    {"debug", debug},
+    {"setoption", setoption},
+    {"ucinewgame", ucinewgame},
+    {"stop", stop},
+    {"ponderhit", ponderhit},
     { 0 }
 };
 
