@@ -7,6 +7,7 @@
 #include "board.h"
 #include "tests.h"
 #include "magic.h"
+#include "uci.h"
 
 #ifndef NUM_THREADS
 #define NUM_THREADS 1
@@ -65,6 +66,24 @@ int main(int argc, char** argv)
         fprintf(stderr, "Error parsing arguments\n");
         exit(-1);
     }
+
+    FILE* input = fdopen(0, "r");
+
+    Board board;
+    int running = 1;
+    while (running)
+    {
+        char* command = malloc(COMMAND_LIMIT);
+        size_t size = COMMAND_LIMIT;
+        if (getline(&command, &size, input) == -1)
+        {
+            fprintf(stderr, "Error reading from command line\n");
+            exit(-1);
+        }
+        running = ProcessCommand(&board, command);
+        free(command);
+    }
+    fclose(input);
 
     return 0;
 }
