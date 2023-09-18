@@ -8,7 +8,7 @@
  *
  * Command functions
  *
- * These functions must follow all follow the same pattern and function
+ * These functions must all follow the same pattern and function
  * signature. They must return an int, and take two arguments: a Board pointer
  * and a char pointer. The Board pointer is the current boardstate, and the
  * char pointer is the entire command that is being processed. The name of the
