@@ -23,7 +23,7 @@ int bitScanForward(uint64_t bb)
 {
     if (bb == 0)
         return 0;
-    const uint64_t debruijn64 = 0x03f79d71b4cb0a89ULL;
+    const uint64_t debruijn64 = 0x03f79d71b4cb0a89UL;
     return index64[((bb ^ (bb-1)) * debruijn64) >> 58];
 }
 
@@ -38,7 +38,7 @@ int bitScanReverse(uint64_t bb)
 {
     if (bb == 0)
         return 0;
-    const uint64_t debruijn64 = 0x03f79d71b4cb0a89ULL;
+    const uint64_t debruijn64 = 0x03f79d71b4cb0a89UL;
     bb |= bb >> 1;
     bb |= bb >> 2;
     bb |= bb >> 4;
