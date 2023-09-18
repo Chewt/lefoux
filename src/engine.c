@@ -12,9 +12,6 @@
  */
 int8_t netWeightOfPieces(Board* board)
 {
-   int8_t i;
-   uint64_t bitboard;
-   int8_t numBits;
    int8_t weight = 0;
    const int8_t pawnWeight = 1;
    const int8_t knightWeight = 3;

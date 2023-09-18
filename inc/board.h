@@ -135,24 +135,11 @@ extern const uint64_t PATTK;  // b2
 extern const uint64_t FILELIST[8];
 extern const uint64_t RANK[8];
 
-typedef struct {
-    uint64_t mask;
-    uint64_t magic;
-} Magic;
-
-extern const Magic magicBishop[64];
-extern const Magic magicRook[64];
-extern const uint64_t magicRookAttacks[64][4096];
-extern const uint64_t magicBishopAttacks[64][512];
-
 uint64_t magicLookupBishop(uint64_t occupancy, enumSquare square);
 uint64_t magicLookupRook(uint64_t occupancy, enumSquare square);
 
 uint64_t getMoves(enumPiece, uint64_t pieces, uint64_t friends, uint64_t foes);
 
 void printBitboard(uint64_t bb);
-
-int computeRookMagic();
-int computeBishopMagic();
 
 #endif /* end of include guard: BOARD_H */

@@ -8,7 +8,9 @@
 #include "tests.h"
 #include "magic.h"
 
+#ifndef NUM_THREADS
 #define NUM_THREADS 1
+#endif
 
 /* argp struct */
 struct flags {
@@ -52,8 +54,8 @@ int main(int argc, char** argv)
     /* Command line args */
     struct flags flags;
     struct argp_option options[] = {
-        {"test", 500, 0, 0, "Run unit tests"},
-        {"magic", 501, 0, 0, "Compute magic numbers for Rooks and Bishops"},
+        {"test", 500, 0, 0, "Run unit tests", 0},
+        {"magic", 501, 0, 0, "Compute magic numbers for Rooks and Bishops", 0},
         { 0 }
     };
     struct argp argp = {options, parse_opt, 0, "Multithreaded chess engine.",
