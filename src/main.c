@@ -5,6 +5,8 @@
 
 #include "bitHelpers.h"
 #include "board.h"
+#include "uci.h"
+
 #define NUM_THREADS 1
 
 int tests();
@@ -58,6 +60,25 @@ int main(int argc, char** argv)
     }
 
     omp_set_num_threads(NUM_THREADS);
+
+    FILE* input = fdopen(0, "r");
+
+    Board board;
+    while (1)
+    {
+        char* command = malloc(COMMAND_LIMIT);
+        size_t size = COMMAND_LIMIT;
+        if (getline(&command, &size, input) == -1)
+        {
+            fprintf(stderr, "Error reading from command line\n");
+            exit(-1);
+        }
+        ProcessCommand(&board, command);
+        free(command);
+    }
+
+    
+    
 
     // computeRookMagic();
     // computeBishopMagic();
