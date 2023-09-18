@@ -26,6 +26,8 @@ int ProcessCommand(Board* board, char* command)
     Command* c;
     for (c = allcommands; c->match[0] != 0; c++)
     {
+        if (!strcmp("exit", token))
+            return 0;
         if (!strcmp(c->match, token))
         {
             c->func(board, command_copy);

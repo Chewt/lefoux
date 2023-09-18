@@ -64,7 +64,8 @@ int main(int argc, char** argv)
     FILE* input = fdopen(0, "r");
 
     Board board;
-    while (1)
+    int running = 1;
+    while (running)
     {
         char* command = malloc(COMMAND_LIMIT);
         size_t size = COMMAND_LIMIT;
@@ -73,10 +74,10 @@ int main(int argc, char** argv)
             fprintf(stderr, "Error reading from command line\n");
             exit(-1);
         }
-        ProcessCommand(&board, command);
+        running = ProcessCommand(&board, command);
         free(command);
     }
-
+    fclose(input);
     
     
 
