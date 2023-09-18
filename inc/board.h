@@ -36,14 +36,20 @@ typedef struct
  * @brief enum for piece types. Can be combined with color using '+' i.e.
  * PAWN + WHITE
  */
-enum {
+typedef enum {
    PAWN = 0,
    KNIGHT,
    BISHOP,
    ROOK,
    QUEEN,
-   KING
-};
+   KING,
+   _PAWN,
+   _KNIGHT,
+   _BISHOP,
+   _ROOK,
+   _QUEEN,
+   _KING,
+} enumPiece;
 
 /*
  * @brief enum for piece colors. Can be combined with piece type using '+' i.e.
@@ -51,7 +57,7 @@ enum {
  */
 typedef enum {
    WHITE = 0,
-   BLACK = 7
+   BLACK = 6
 } enumColor;
 
 /*

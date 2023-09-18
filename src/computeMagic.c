@@ -26,7 +26,7 @@ uint64_t rand64FewBits()
 uint64_t occupancyIdxToMask(int occupancyIdx, uint64_t mask)
 {
     uint64_t occupancyMask = 0;
-    int n = getNumBits(moveMask);
+    int n = getNumBits(mask);
     for (int occBitIdx=0; occBitIdx<n; occBitIdx++)
     {
         int maskBitIdx = bitScanForward(mask);

@@ -8,6 +8,7 @@
  * tests
  * @brief runs a series of tests
  * @return number of tests that failed
+ */
 int tests()
 {
     int pass = 0;
