@@ -36,28 +36,21 @@ const uint64_t RANK[8] = {
     0xFF00000000000000UL
 };
 
-/*
-const Magic magicRook[64] = {0};
-const uint64_t magicRookAttacks[64][4096] = {0};
-const Magic magicBishop[64] = {0};
-const uint64_t magicBishopAttacks[64][512] = {0};
-*/
-
 /**
  * Pseudo rotate a bitboard 45 degree clockwise.
  * Main Diagonal is mapped to 1st rank
  * @param x any bitboard
  * @return bitboard x rotated
  */
-uint64_t pseudoRotate45clockwise (uint64_t x)
+uint64_t pseudoRotate45Clockwise (uint64_t x)
 {
-   const uint64_t k1 = 0xAAAAAAAAAAAAAAAAUL;
-   const uint64_t k2 = 0xCCCCCCCCCCCCCCCCUL;
-   const uint64_t k4 = 0xF0F0F0F0F0F0F0F0UL;
-   x ^= k1 & (x ^ shiftWrapRight(x,  8));
-   x ^= k2 & (x ^ shiftWrapRight(x, 16));
-   x ^= k4 & (x ^ shiftWrapRight(x, 32));
-   return x;
+    const uint64_t k1 = 0xAAAAAAAAAAAAAAAAUL;
+    const uint64_t k2 = 0xCCCCCCCCCCCCCCCCUL;
+    const uint64_t k4 = 0xF0F0F0F0F0F0F0F0UL;
+    x ^= k1 & (x ^ shiftWrapRight(x,  8));
+    x ^= k2 & (x ^ shiftWrapRight(x, 16));
+    x ^= k4 & (x ^ shiftWrapRight(x, 32));
+    return x;
 }
 
 /**
@@ -68,13 +61,13 @@ uint64_t pseudoRotate45clockwise (uint64_t x)
  */
 uint64_t pseudoRotate45antiClockwise (uint64_t x)
 {
-   const uint64_t k1 = 0x5555555555555555UL;
-   const uint64_t k2 = 0x3333333333333333UL;
-   const uint64_t k4 = 0x0F0F0F0F0F0F0F0FUL;
-   x ^= k1 & (x ^ shiftWrapRight(x,  8));
-   x ^= k2 & (x ^ shiftWrapRight(x, 16));
-   x ^= k4 & (x ^ shiftWrapRight(x, 32));
-   return x;
+    const uint64_t k1 = 0x5555555555555555UL;
+    const uint64_t k2 = 0x3333333333333333UL;
+    const uint64_t k4 = 0x0F0F0F0F0F0F0F0FUL;
+    x ^= k1 & (x ^ shiftWrapRight(x,  8));
+    x ^= k2 & (x ^ shiftWrapRight(x, 16));
+    x ^= k4 & (x ^ shiftWrapRight(x, 32));
+    return x;
 }
 
 uint64_t magicLookupBishop(uint64_t occupancy, enumSquare square)
@@ -109,63 +102,63 @@ uint64_t getMoves(enumPiece type, uint64_t pieces, uint64_t friends, uint64_t fo
     while ((piece = pieces & -pieces)) {
         square = bitScanForward(piece);
         switch(type) {
-          case PAWN + WHITE:
-          case PAWN + BLACK:
-            break;
+            case PAWN + WHITE:
+            case PAWN + BLACK:
+                break;
 
-          case KNIGHT + WHITE:
-          case KNIGHT + BLACK:
-            rank = square / 8 - C3 / 8;
-            file = square % 8 - C3 % 8;
-            attacks = NMOV;
-            for (i=C3/8; i<rank; i++)
-                attacks <<= 8;
-            for (i=C3/8; i>rank; i--)
-                attacks >>= 8;
-            // ~HFILE and ~AFILE prevent wrap-around
-            for (i=C3%8; i<file; i++)
-                attacks = (attacks << 1) & ~HFILE;
-            for (i=C3%8; i>file; i--)
-                attacks = (attacks >> 1) & ~AFILE;
-            bitmap |= attacks ^ (attacks & friends);
-            break;
+            case KNIGHT + WHITE:
+            case KNIGHT + BLACK:
+                rank = square / 8 - C3 / 8;
+                file = square % 8 - C3 % 8;
+                attacks = NMOV;
+                for (i=C3/8; i<rank; i++)
+                    attacks <<= 8;
+                for (i=C3/8; i>rank; i--)
+                    attacks >>= 8;
+                // ~HFILE and ~AFILE prevent wrap-around
+                for (i=C3%8; i<file; i++)
+                    attacks = (attacks << 1) & ~HFILE;
+                for (i=C3%8; i>file; i--)
+                    attacks = (attacks >> 1) & ~AFILE;
+                bitmap |= attacks ^ (attacks & friends);
+                break;
 
-          case BISHOP + WHITE:
-          case BISHOP + BLACK:
-            attacks = magicLookupBishop((friends | foes), square);
-            bitmap |= attacks ^ (attacks & friends);
-            break;
+            case BISHOP + WHITE:
+            case BISHOP + BLACK:
+                attacks = magicLookupBishop((friends | foes), square);
+                bitmap |= attacks ^ (attacks & friends);
+                break;
 
-          case ROOK + WHITE:
-          case ROOK + BLACK:
-            attacks = magicLookupRook((friends | foes), square);
-            bitmap |= attacks ^ (attacks & friends);
-            break;
+            case ROOK + WHITE:
+            case ROOK + BLACK:
+                attacks = magicLookupRook((friends | foes), square);
+                bitmap |= attacks ^ (attacks & friends);
+                break;
 
-          case QUEEN + WHITE:
-          case QUEEN + BLACK:
-            attacks = magicLookupRook((friends | foes), square);
-            bitmap |= attacks ^ (attacks & friends);
-            attacks = magicLookupBishop((friends | foes), square);
-            bitmap |= attacks ^ (attacks & friends);
-            break;
+            case QUEEN + WHITE:
+            case QUEEN + BLACK:
+                attacks = magicLookupRook((friends | foes), square);
+                bitmap |= attacks ^ (attacks & friends);
+                attacks = magicLookupBishop((friends | foes), square);
+                bitmap |= attacks ^ (attacks & friends);
+                break;
 
-          case KING + WHITE:
-          case KING + BLACK:
-            rank = square / 8 - B2 / 8;
-            file = square % 8 - B2 % 8;
-            attacks = KMOV;
-            for (i=B2/8; i<rank; i++)
-                attacks <<= 8;
-            for (i=B2/8; i>rank; i--)
-                attacks >>= 8;
-            // ~HFILE and ~AFILE prevent wrap-around
-            for (i=B2%8; i<file; i++)
-                attacks = (attacks << 1) & ~HFILE;
-            for (i=B2%8; i>file; i--)
-                attacks = (attacks >> 1) & ~AFILE;
-            bitmap |= attacks ^ (attacks & friends);
-            break;
+            case KING + WHITE:
+            case KING + BLACK:
+                rank = square / 8 - B2 / 8;
+                file = square % 8 - B2 % 8;
+                attacks = KMOV;
+                for (i=B2/8; i<rank; i++)
+                    attacks <<= 8;
+                for (i=B2/8; i>rank; i--)
+                    attacks >>= 8;
+                // ~HFILE and ~AFILE prevent wrap-around
+                for (i=B2%8; i<file; i++)
+                    attacks = (attacks << 1) & ~HFILE;
+                for (i=B2%8; i>file; i--)
+                    attacks = (attacks >> 1) & ~AFILE;
+                bitmap |= attacks ^ (attacks & friends);
+                break;
         }
         // Mask away piece that was already processed
         pieces ^= piece;
@@ -186,4 +179,62 @@ void printBitboard(uint64_t bb)
         printf("\n");
     }
     printf("\n   1 2 3 4 5 6 7 8\n\n");
+}
+
+/*
+ * Populates the array moves with legal moves
+ * and returns the number of legal moves.
+ * Use MAX_MOVES_PER_POSITION as the max size
+ * for moves
+ */
+int8_t genAllLegalMoves(Board *board, Move *moves)
+{
+    return 0;
+}
+
+/*
+ * Updates the board based on the data provided in
+ * move. Assumes the move is legal
+ * Idea: Maybe return a move that can undo the current
+ * move utilizing the 5 unused bits to give info about undo.
+ * This could save on memory by storing a move instead of
+ * a whole board in minMax()
+ */
+void boardMove(Board *board, Move move)
+{
+    /* Remove enemy piece if possible */
+    int i;
+    for (i = 0; i < 12; ++i)
+        board->pieces[i] &= ~mgetdst(move);
+
+    /* Remove src piece */
+    board->pieces[mgetpiece(move) + mgetcol(move)] ^= mgetsrc(move);
+
+    /* Add dst piece */
+    board->pieces[mgetpiece(move) + mgetcol(move)] ^= mgetdst(move);
+
+    /* Swap color */
+    board->info ^= 0x01; 
+
+    /* Update castling */
+    int src_color = mgetcol(move);
+    if (mgetpiece(move) == KING)
+    {
+        if (src_color == WHITE)
+            board->info &= 0xffe7;
+        else if (src_color == BLACK)
+            board->info &= 0xfff9;
+    }
+    if (!(board->pieces[WHITE + ROOK] & A1))
+        board->info &= ~(0x1 << 4);
+    if (!(board->pieces[WHITE + ROOK] & A8))
+        board->info &= ~(0x1 << 3);
+    if (!(board->pieces[BLACK + ROOK] & H1))
+        board->info &= ~(0x1 << 2);
+    if (!(board->pieces[BLACK + ROOK] & H8))
+        board->info &= ~(0x1 << 1);
+
+    /* Update en passant */
+
+    return;
 }
