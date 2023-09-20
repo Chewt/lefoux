@@ -44,30 +44,6 @@ int8_t evaluateBoard(Board* board)
 }
 
 /*
- * Populates the array moves with legal moves
- * and returns the number of legal moves.
- * Use MAX_MOVES_PER_POSITION as the max size
- * for moves
- */
-int8_t genAllLegalMoves(Board *board, Move *moves)
-{
-   return 0;
-}
-
-/*
- * Updates the board based on the data provided in
- * move. Assumes the move is legal
- * Idea: Maybe return a move that can undo the current
- * move utilizing the 5 unused bits to give info about undo.
- * This could save on memory by storing a move instead of
- * a whole board in minMax()
- */
-void boardMove(Board *board, Move move)
-{
-   return;
-}
-
-/*
  * Computes the weight of a move in a position using minMax.
  * Depth is in half-moves
  */

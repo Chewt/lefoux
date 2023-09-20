@@ -236,4 +236,18 @@ uint64_t getMoves(enumPiece type, uint64_t pieces, uint64_t friends, uint64_t fo
  */
 void printBitboard(uint64_t bb);
 
+/*
+ * genAllLegalMoves
+ * @param board a pointer to a Board struct
+ * @param moves a pointer to a preallocated array of type Move
+ * @return number of moves in the array
+ */
+int8_t genAllLegalMoves(Board *board, Move *moves);
+
+/*
+ * boardMove
+ * @param board a pointer to a Board struct
+ * @param move a Move to make on the board
+ */
+void boardMove(Board *board, Move move);
 #endif /* end of include guard: BOARD_H */
