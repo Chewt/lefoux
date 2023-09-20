@@ -59,7 +59,9 @@ typedef enum {
  */
 typedef enum {
    WHITE = 0,
-   BLACK = 6
+   BLACK = 6,
+   _WHITE = 0x00,
+   _BLACK = 0x01
 } enumColor;
 
 /*
@@ -131,6 +133,75 @@ typedef enum {
     G8=0x4000000000000000,
     H8=0x8000000000000000,
 } enumSquare;
+/*
+ * @brief enum for piece squares in index form
+ */
+typedef enum {
+    IA1=0,
+    IB1,
+    IC1,
+    ID1,
+    IE1,
+    IF1,
+    IG1,
+    IH1,
+    IA2,
+    IB2,
+    IC2,
+    ID2,
+    IE2,
+    IF2,
+    IG2,
+    IH2,
+    IA3,
+    IB3,
+    IC3,
+    ID3,
+    IE3,
+    IF3,
+    IG3,
+    IH3,
+    IA4,
+    IB4,
+    IC4,
+    ID4,
+    IE4,
+    IF4,
+    IG4,
+    IH4,
+    IA5,
+    IB5,
+    IC5,
+    ID5,
+    IE5,
+    IF5,
+    IG5,
+    IH5,
+    IA6,
+    IB6,
+    IC6,
+    ID6,
+    IE6,
+    IF6,
+    IG6,
+    IH6,
+    IA7,
+    IB7,
+    IC7,
+    ID7,
+    IE7,
+    IF7,
+    IG7,
+    IH7,
+    IA8,
+    IB8,
+    IC8,
+    ID8,
+    IE8,
+    IF8,
+    IG8,
+    IH8
+} enumIndexSquare;
 
 // Extract en passant from info
 #define bgetenp(x) ((uint8_t)(0x3F & (x >> 5)))
@@ -183,13 +254,13 @@ typedef uint32_t Move;
 #define mgetdstbb(x)  (indextobb(mgetdst(x)))
 
 // Extract piece type from move
-#define mgetpiece(x)  ((uint8_t)(0x07 & (x >>  4)))
+#define mgetpiece(x)  ((uint8_t)(0x07 & ((x) >>  4)))
 
 // Extract promotion piece from move
-#define mgetprom(x)   ((uint8_t)(0x07 & (x >>  1)))
+#define mgetprom(x)   ((uint8_t)(0x07 & ((x) >>  1)))
 
 // Extract color to play from move.
-#define mgetcol(x)    ((uint8_t)(0x01 & x))
+#define mgetcol(x)    (((0x01 & (x)) ? BLACK : WHITE))
 
 extern const uint64_t RDIAG;
 extern const uint64_t LDIAG;
@@ -250,4 +321,17 @@ int8_t genAllLegalMoves(Board *board, Move *moves);
  * @param move a Move to make on the board
  */
 void boardMove(Board *board, Move move);
+
+/*
+ * getDefaultBoard
+ * @return A Board initialized to untouched chess board
+ */
+Board getDefaultBoard();
+
+/*
+ * printBoardInfo
+ * @param info the info section of a Board struct
+ */
+void printBoardInfo(uint16_t info);
+
 #endif /* end of include guard: BOARD_H */

@@ -170,7 +170,7 @@ void printBitboard(uint64_t bb)
 {
     for (int rank=7; rank >= 0; rank--)
     {
-        printf("%c  ", 'a' + rank);
+        printf("%c  ", '1' + rank);
         for (int file=0; file < 8; file++)
         {
             int bit = (bb >> (rank*8 + file)) & 1;
@@ -178,7 +178,38 @@ void printBitboard(uint64_t bb)
         }
         printf("\n");
     }
-    printf("\n   1 2 3 4 5 6 7 8\n\n");
+    printf("\n   a b c d e f g h\n\n");
+}
+
+void printBytesBinary(int num_bytes, uint64_t data)
+{
+    int i, j;
+    for (i = num_bytes - 1; i >= 0; --i)
+    {
+        for (j = 7; j >= 0; --j)
+        {
+            printf("%d", (data & (0x1 << ((i * 8) + j))) > 0);
+            if (j == 4 || j == 0)
+                printf(" ");
+        }
+    }
+}
+
+/*
+ * Take in the info portion of a board struct and prints details to the screen
+ */
+void printBoardInfo(uint16_t info)
+{
+    printf("raw info: 0x%04x, ", info);
+    printBytesBinary(2, info);
+    printf("\n");
+    printf("En passant: %c%c(%u)\nCastling: %c%c%c%c\nColor: %c\n",
+            bgetenp(info) % 8 + 'A', bgetenp(info) / 8 + '1', bgetenp(info),
+            (bgetcas(info) & 0x8) ? 'Q' : '-',
+            (bgetcas(info) & 0x4) ? 'K' : '-',
+            (bgetcas(info) & 0x2) ? 'q' : '-',
+            (bgetcas(info) & 0x1) ? 'k' : '-',
+            (bgetcol(info) & 0x1) ? 'B' : 'W');
 }
 
 /*
@@ -214,7 +245,7 @@ void boardMove(Board *board, Move move)
     board->pieces[mgetpiece(move) + mgetcol(move)] ^= mgetdstbb(move);
 
     /* Swap color */
-    board->info ^= 0x01; 
+    board->info ^= 0x1; 
 
     /* Update castling */
     int src_color = mgetcol(move);
@@ -227,22 +258,43 @@ void boardMove(Board *board, Move move)
     }
     if (!(board->pieces[WHITE + ROOK] & A1))
         board->info &= ~(0x1 << 4);
-    if (!(board->pieces[WHITE + ROOK] & A8))
+    if (!(board->pieces[WHITE + ROOK] & H1))
         board->info &= ~(0x1 << 3);
-    if (!(board->pieces[BLACK + ROOK] & H1))
+    if (!(board->pieces[BLACK + ROOK] & A8))
         board->info &= ~(0x1 << 2);
     if (!(board->pieces[BLACK + ROOK] & H8))
         board->info &= ~(0x1 << 1);
+
 
     /* Update en passant */
     board->info &= ~(0x3f << 5);
     if (mgetpiece(move) == PAWN)
     {
         if ((mgetsrcbb(move) & RANK[1]) && (mgetdstbb(move) & RANK[3]))
-            board->info &= ((mgetsrc(move) + 8) << 5) | 0x3f;
+            board->info = ((mgetsrc(move) + 8) << 5) | (0x1f & board->info);
         else if ((mgetsrcbb(move) & RANK[6]) && (mgetdstbb(move) & RANK[4]))
-            board->info &= ((mgetsrc(move) - 8) << 5) | 0x3f;
+            board->info = ((mgetsrc(move) - 8) << 5) | (0x1f & board->info);
     }
 
     return;
+}
+
+Board getDefaultBoard()
+{
+    Board b;
+    b.pieces[WHITE + PAWN]   = RANK[1];
+    b.pieces[WHITE + KNIGHT] = B1 | G1;
+    b.pieces[WHITE + BISHOP] = C1 | F1;
+    b.pieces[WHITE + ROOK]   = A1 | H1;
+    b.pieces[WHITE + QUEEN]  = D1;
+    b.pieces[WHITE + KING]   = E1;
+    b.pieces[BLACK + PAWN]   = RANK[6];
+    b.pieces[BLACK + KNIGHT] = B8 | G8;
+    b.pieces[BLACK + BISHOP] = C8 | F8;
+    b.pieces[BLACK + ROOK]   = A8 | H8;
+    b.pieces[BLACK + QUEEN]  = D8;
+    b.pieces[BLACK + KING]   = E8;
+    b.info = (0xf << 1) | 0x0;
+
+    return b;
 }
