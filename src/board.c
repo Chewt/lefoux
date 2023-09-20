@@ -70,7 +70,7 @@ uint64_t pseudoRotate45antiClockwise (uint64_t x)
     return x;
 }
 
-uint64_t magicLookupBishop(uint64_t occupancy, enumSquare square)
+uint64_t magicLookupBishop(uint64_t occupancy, enumIndexSquare square)
 {
     occupancy &= magicBishop[square].mask;
     occupancy *= magicBishop[square].magic;
@@ -78,7 +78,7 @@ uint64_t magicLookupBishop(uint64_t occupancy, enumSquare square)
     return magicBishopAttacks[square][occupancy];
 }
 
-uint64_t magicLookupRook(uint64_t occupancy, enumSquare square)
+uint64_t magicLookupRook(uint64_t occupancy, enumIndexSquare square)
 {
     occupancy &= magicRook[square].mask;
     occupancy *= magicRook[square].magic;
@@ -97,7 +97,7 @@ uint64_t getMoves(enumPiece type, uint64_t pieces, uint64_t friends, uint64_t fo
     int rank;
     int file;
     int i;
-    enumSquare square;
+    enumIndexSquare square;
     // Isolate a piece to process, loop while there is a piece
     while ((piece = pieces & -pieces)) {
         square = bitScanForward(piece);

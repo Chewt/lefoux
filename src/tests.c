@@ -122,16 +122,16 @@ RUN_TEST( shiftWrapRight( 0xFFUL, 8 ), uint64_t_res, "%lx",
         0xFF00000000000000UL);
 RUN_TEST( getNumBits( 0xFFUL ), int_res, "%d", 8 );
 RUN_TEST( getNumBits( 0UL ), int_res, "%d", 0 );
-RUN_TEST_FMT( magicLookupRook( 0x103UL , A1 ), uint64_t_res,
+RUN_TEST_FMT( magicLookupRook( 0x103UL , IA1 ), uint64_t_res,
         printBitboard, 0x102UL);
-RUN_TEST_FMT( magicLookupRook( 0xFFFFUL , A1 ), uint64_t_res,
+RUN_TEST_FMT( magicLookupRook( 0xFFFFUL , IA1 ), uint64_t_res,
         printBitboard, 0x102UL);
-RUN_TEST_FMT( magicLookupRook( 0xFFFFUL << 48, A1 ), uint64_t_res,
+RUN_TEST_FMT( magicLookupRook( 0xFFFFUL << 48, IA1 ), uint64_t_res,
         printBitboard, ((AFILE | RANK[0]) & ~1UL) & ~RANK[7] );
 
-   RUN_TEST_FMT( magicLookupBishop( 0xFFFFFFUL , B2 ), uint64_t_res,
+   RUN_TEST_FMT( magicLookupBishop( 0xFFFFFFUL , IB2 ), uint64_t_res,
    printBitboard, 0x50005UL);
-   RUN_TEST_FMT( magicLookupBishop( 0xFFFFUL << 48, B2 ), uint64_t_res,
+   RUN_TEST_FMT( magicLookupBishop( 0xFFFFUL << 48, IB2 ), uint64_t_res,
    printBitboard, 0x0040201008050005 );
 
 /* boardMove tests */

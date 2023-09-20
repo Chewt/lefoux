@@ -281,14 +281,14 @@ extern const uint64_t RANK[8];
  * @param square the square the attacking bishop is attacking from
  * @return bitboard of all attacks that bishop can make
  */
-uint64_t magicLookupBishop(uint64_t occupancy, enumSquare square);
+uint64_t magicLookupBishop(uint64_t occupancy, enumIndexSquare square);
 /*
  * magicLookupRook
  * @param occupancy a bitboard of all of the pieces
  * @param square the square the attacking rook is attacking from
  * @return bitboard of all attacks that rook can make
  */
-uint64_t magicLookupRook(uint64_t occupancy, enumSquare square);
+uint64_t magicLookupRook(uint64_t occupancy, enumIndexSquare square);
 
 /*
  * getMoves
