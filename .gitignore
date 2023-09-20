@@ -1,4 +1,6 @@
 lefoux
 .ccls-cache/
+.ccls
 obj/
 tags
+*.sh
