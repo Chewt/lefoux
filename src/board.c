@@ -205,13 +205,13 @@ void boardMove(Board *board, Move move)
     /* Remove enemy piece if possible */
     int i;
     for (i = 0; i < 12; ++i)
-        board->pieces[i] &= ~mgetdst(move);
+        board->pieces[i] &= ~mgetdstbb(move);
 
     /* Remove src piece */
-    board->pieces[mgetpiece(move) + mgetcol(move)] ^= mgetsrc(move);
+    board->pieces[mgetpiece(move) + mgetcol(move)] ^= mgetsrcbb(move);
 
     /* Add dst piece */
-    board->pieces[mgetpiece(move) + mgetcol(move)] ^= mgetdst(move);
+    board->pieces[mgetpiece(move) + mgetcol(move)] ^= mgetdstbb(move);
 
     /* Swap color */
     board->info ^= 0x01; 
@@ -235,6 +235,14 @@ void boardMove(Board *board, Move move)
         board->info &= ~(0x1 << 1);
 
     /* Update en passant */
+    board->info &= ~(0x3f << 5);
+    if (mgetpiece(move) == PAWN)
+    {
+        if ((mgetsrcbb(move) & RANK[1]) && (mgetdstbb(move) & RANK[3]))
+            board->info &= ((mgetsrc(move) + 8) << 5) | 0x3f;
+        else if ((mgetsrcbb(move) & RANK[6]) && (mgetdstbb(move) & RANK[4]))
+            board->info &= ((mgetsrc(move) - 8) << 5) | 0x3f;
+    }
 
     return;
 }

@@ -163,14 +163,24 @@ typedef uint32_t Move;
 
 // Extract move weight
 #define mgetweight(x) ((int8_t)(0xFF & (x >> 19)))
+
 // Returns a move with the weight set
 #define msetweight(m, v) ((Move)(m | ((0xFF & v) << 19)))
+
+// Convert source or destination index to bitboard
+#define indextobb(x)  ((uint64_t)(0x1UL << x))
 
 // Extract source location from move
 #define mgetsrc(x)    ((uint8_t)(0x3F & (x >> 13)))
 
 // Extract destination location from move
 #define mgetdst(x)    ((uint8_t)(0x3F & (x >>  7)))
+
+// Extract source location as bitboard
+#define mgetsrcbb(x)  (indextobb(mgetsrc(x)))
+
+// Extract destination location as bitboard
+#define mgetdstbb(x)  (indextobb(mgetdst(x)))
 
 // Extract piece type from move
 #define mgetpiece(x)  ((uint8_t)(0x07 & (x >>  4)))
