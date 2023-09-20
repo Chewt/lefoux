@@ -48,7 +48,7 @@ static int parse_opt (int key, char *arg, struct argp_state *state)
 int main(int argc, char** argv)
 {
 #ifdef _OPENMP
-	fprintf( stderr, "OpenMP is supported -- version = %d\n", _OPENMP );
+    fprintf( stderr, "OpenMP is supported -- version = %d\n", _OPENMP );
 #else
     fprintf( stderr, "No OpenMP support!\n" );
     return 1;
@@ -65,7 +65,7 @@ int main(int argc, char** argv)
         { 0 }
     };
     struct argp argp = {options, parse_opt, 0, "Multithreaded chess engine.",
-                        0,       0,         0};
+        0,       0,         0};
     if (argp_parse(&argp, argc, argv, 0, 0, &flags))
     {
         fprintf(stderr, "Error parsing arguments\n");

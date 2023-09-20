@@ -35,9 +35,9 @@ inline uint64_t shiftWrapRight(uint64_t x, int s)
  */
 inline int getNumBits(uint64_t x)
 {
-   int numBits = x ? 1 : 0;
-   while (x &= (x-1)) numBits++;
-   return numBits;
+    int numBits = x ? 1 : 0;
+    while (x &= (x-1)) numBits++;
+    return numBits;
 }
 
 

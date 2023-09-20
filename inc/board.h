@@ -39,18 +39,18 @@ typedef struct
  * PAWN + WHITE
  */
 typedef enum {
-   PAWN = 0,
-   KNIGHT,
-   BISHOP,
-   ROOK,
-   QUEEN,
-   KING,
-   _PAWN,
-   _KNIGHT,
-   _BISHOP,
-   _ROOK,
-   _QUEEN,
-   _KING,
+    PAWN = 0,
+    KNIGHT,
+    BISHOP,
+    ROOK,
+    QUEEN,
+    KING,
+    _PAWN,
+    _KNIGHT,
+    _BISHOP,
+    _ROOK,
+    _QUEEN,
+    _KING,
 } enumPiece;
 
 /*
@@ -58,10 +58,10 @@ typedef enum {
  * PAWN + WHITE
  */
 typedef enum {
-   WHITE = 0,
-   BLACK = 6,
-   _WHITE = 0x00,
-   _BLACK = 0x01
+    WHITE = 0,
+    BLACK = 6,
+    _WHITE = 0x00,
+    _BLACK = 0x01
 } enumColor;
 
 /*

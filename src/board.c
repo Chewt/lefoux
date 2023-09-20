@@ -265,7 +265,6 @@ void boardMove(Board *board, Move move)
     if (!(board->pieces[BLACK + ROOK] & H8))
         board->info &= ~(0x1 << 1);
 
-
     /* Update en passant */
     board->info &= ~(0x3f << 5);
     if (mgetpiece(move) == PAWN)

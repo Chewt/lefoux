@@ -97,7 +97,7 @@ int computeRookMagic(Magic mRook[64], uint64_t mRookAttacks[64][4096])
     // Give each thread a square to work on. We don't mark mRook and mRookAttacks
     // as shared since threads won't have overlapping work on those arrays so
     // they don't need to be protected
-    #pragma omp parallel for shared(stdout, stderr, ret)
+#pragma omp parallel for shared(stdout, stderr, ret)
     for (int square=0; square < 64; square++)
     {
         mRook[square].magic = 0;
@@ -139,7 +139,7 @@ int computeRookMagic(Magic mRook[64], uint64_t mRookAttacks[64][4096])
                 // Relying on 64 - numMaskBits > 32 so assigning to an int
                 // doesn't truncate
                 int testIdx = magic * rookOccupancy[occupancyIdx]
-                              >> (64 - numMaskBits);
+                    >> (64 - numMaskBits);
                 // If 0, this is a new index so we set it
                 if (mRookAttacks[square][testIdx] == 0UL)
                 {
@@ -233,7 +233,7 @@ int computeBishopMagic(Magic mBishop[64], uint64_t mBishopAttacks[64][512])
     // Give each thread a square to work on. We don't mark mRook and mRookAttacks
     // as shared since threads won't have overlapping work on those arrays so
     // they don't need to be protected
-    #pragma omp parallel for shared(stdout, stderr, ret)
+#pragma omp parallel for shared(stdout, stderr, ret)
     for (int square=0; square < 64; square++)
     {
         mBishop[square].magic = 0;
@@ -273,14 +273,14 @@ int computeBishopMagic(Magic mBishop[64], uint64_t mBishopAttacks[64][512])
                 // Relying on 64 - numMaskBits > 32 so assigning to an int
                 // doesn't truncate
                 int testIdx = magic * bishopOccupancy[occupancyIdx]
-                              >> (64 - numMaskBits);
+                    >> (64 - numMaskBits);
                 if (mBishopAttacks[square][testIdx] == 0UL)
                 {
                     mBishopAttacks[square][testIdx] =
                         bishopAttacks[occupancyIdx];
                 }
                 else if (mBishopAttacks[square][testIdx] !=
-                         bishopAttacks[occupancyIdx])
+                        bishopAttacks[occupancyIdx])
                 {
                     magic = 0;
                     break;
@@ -319,7 +319,7 @@ int computeMagic()
     uint64_t mRookAttacks[64][4096] = {0};
     // Compute the magic here and only print if they are both successful
     if ( !computeBishopMagic(mBishop, mBishopAttacks) &&
-         !computeRookMagic(mRook, mRookAttacks) )
+            !computeRookMagic(mRook, mRookAttacks) )
     {
         printf("#include \"magic.h\"\n\n");
         // Bishop magic
