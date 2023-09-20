@@ -166,9 +166,6 @@ uint64_t getMoves(enumPiece type, uint64_t pieces, uint64_t friends, uint64_t fo
                 attacks = (attacks >> 1) & ~AFILE;
             bitmap |= attacks ^ (attacks & friends);
             break;
-
-          defualt:
-            break;
         }
         // Mask away piece that was already processed
         pieces ^= piece;

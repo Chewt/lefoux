@@ -77,8 +77,11 @@ int8_t minMax(Board* board, uint8_t depth)
    // Assumes MAX_MOVES_PER_POSITION < 256
    uint8_t i;
    uint8_t numMoves;
-   int8_t score;
-   Move bestMove;
+
+   // Not used for the present moment
+   //int8_t score;
+
+   Move bestMove = -300;
    Board tmpBoard;
    // MAX_MOVES_PER_POSITION*sizeof(Move) = 218 * 4 = 872 bytes
    Move moves[MAX_MOVES_PER_POSITION];
@@ -107,8 +110,11 @@ Move find_best_move(Board* board, uint8_t depth)
    // Assumes MAX_MOVES_PER_POSITION < 256
    uint8_t i;
    uint8_t numMoves;
-   int8_t score;
-   Move bestMove;
+
+   // Not used for the present moment
+   //int8_t score;
+
+   Move bestMove = 0;
    Board tmpBoard;
    // MAX_MOVES_PER_POSITION*sizeof(Move) = 218 * 4 = 872 bytes
    Move moves[MAX_MOVES_PER_POSITION];

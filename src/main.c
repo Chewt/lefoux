@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <omp.h>
 #include <argp.h>
+#include <string.h>
 
 #include "bitHelpers.h"
 #include "board.h"
@@ -15,7 +16,7 @@
 
 /* argp struct */
 struct flags {
-
+    char fen[64];
 };
 
 const char *argp_program_bug_address = "https://github.com/Chewt/lefoux/issues";
@@ -30,6 +31,9 @@ static int parse_opt (int key, char *arg, struct argp_state *state)
     int result;
     switch(key)
     {
+        case 'f':
+            memcpy(flags->fen, arg, strlen(arg));
+            break;
         case 500:
             // Program should return non-zero if a test fails
             result = tests();
@@ -55,6 +59,7 @@ int main(int argc, char** argv)
     /* Command line args */
     struct flags flags;
     struct argp_option options[] = {
+        {"fen", 'f', "STRING", 0, "start board with position", 0},
         {"test", 500, 0, 0, "Run unit tests", 0},
         {"magic", 501, 0, 0, "Compute magic numbers for Rooks and Bishops", 0},
         { 0 }
@@ -66,6 +71,9 @@ int main(int argc, char** argv)
         fprintf(stderr, "Error parsing arguments\n");
         exit(-1);
     }
+
+    // TESTING
+    printf("%s\n", flags.fen);
 
     FILE* input = fdopen(0, "r");
 
