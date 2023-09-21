@@ -208,13 +208,6 @@ int tests()
     b = getDefaultBoard();
     Move allMoves[MAX_MOVES_PER_POSITION];
     RUN_TEST( (genAllLegalMoves(&b, allMoves)), int_res, "%d", 20 );
-
-    for (int i=0; i<int_res; i++) 
-    {
-        printMove(allMoves[i]);
-    }
-
-
     m = _WHITE | (PAWN << 4) | (IH2 << 13) | (IH4 << 7);
     boardMove(&b, m);
     RUN_TEST( (genAllLegalMoves(&b, allMoves)), int_res, "%d", 20 );
@@ -223,7 +216,12 @@ int tests()
     RUN_TEST( (genAllLegalMoves(&b, allMoves)), int_res, "%d", 21 );
     m = _WHITE | (PAWN << 4) | (IH4 << 13) | (IH5 << 7);
     boardMove(&b, m);
-    RUN_TEST( (genAllLegalMoves(&b, allMoves)), int_res, "%d", 27 );
+    RUN_TEST( (genAllLegalMoves(&b, allMoves)), int_res, "%d", 29 );
+
+    for (int i=0; i<int_res; i++) 
+    {
+        printMove(allMoves[i]);
+    }
 
     fprintf(stderr, "Tests passed: %s%d%s of %d\n",
             good, pass, clear, pass + fail);

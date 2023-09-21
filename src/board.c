@@ -142,6 +142,7 @@ int8_t genAllLegalMoves(Board *board, Move *moves)
 {
     uint64_t piece;
     uint64_t attacks;
+    uint64_t passiveMoves;
     int rank;
     int file;
     enumIndexSquare square;
@@ -175,15 +176,18 @@ int8_t genAllLegalMoves(Board *board, Move *moves)
                         attacks |= square >> 7 & ~HFILE;
                     }
                     attacks &= foes | (0x1UL << bgetenp(board->info));
+                    passiveMoves = 0;
                     if (color_to_move == WHITE)
-                        attacks |= 0x1UL << (square + 8);
+                        passiveMoves |= 0x1UL << (square + 8);
                     else
-                        attacks |= 0x1UL << (square - 8);
+                        passiveMoves |= 0x1UL << (square - 8);
                     if ((square / 8) == 1 && color_to_move == WHITE)
-                        attacks |= 0x1UL << (square + 16);
+                        passiveMoves |= 0x1UL << (square + 16);
                     else if ((square / 8) == 6 && color_to_move == BLACK)
-                        attacks |= 0x1UL << (square - 16);
+                        passiveMoves |= 0x1UL << (square - 16);
                     bitmap |= attacks ^ (attacks & friends);
+                    bitmap |= passiveMoves ^ (passiveMoves & friends) 
+                              ^ (passiveMoves & foes);
                     break;
 
                 case KNIGHT:
@@ -220,18 +224,18 @@ int8_t genAllLegalMoves(Board *board, Move *moves)
                     break;
 
                 case KING:
-                    rank = square / 8 - B2 / 8;
                     file = square % 8 - B2 % 8;
                     attacks = KMOV;
-                    for (i=B2/8; i<rank; i++)
-                        attacks <<= 8;
-                    for (i=B2/8; i>rank; i--)
-                        attacks >>= 8;
-                    // ~HFILE and ~AFILE prevent wrap-around
-                    for (i=B2%8; i<file; i++)
-                        attacks = (attacks << 1) & ~HFILE;
-                    for (i=B2%8; i>file; i--)
-                        attacks = (attacks >> 1) & ~AFILE;
+
+                    if (square < IB2)
+                        attacks >>= IB2 - square;
+                    if (square > IB2)
+                        attacks <<= square - IB2;
+
+                    if (file == 0 || file == 1)
+                        attacks &= ~(HFILE);
+                    if (file == 6 || file == 7)
+                        attacks &= ~(AFILE);
                     bitmap |= attacks ^ (attacks & friends);
                     break;
             }
