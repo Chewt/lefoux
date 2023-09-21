@@ -152,8 +152,8 @@ int8_t genAllLegalMoves(Board *board, Move *moves)
     uint64_t foes = 0;
     for (i = 0; i < 6; ++i)
     {
-        friends |= board->pieces[i + (color_to_move ^ BLACK)];
-        foes |= board->pieces[i + color_to_move];
+        foes |= board->pieces[i + (color_to_move ^ BLACK)];
+        friends |= board->pieces[i + color_to_move];
     }
     for (int pieceType = 0; pieceType < 6; ++pieceType)
     {
@@ -163,37 +163,42 @@ int8_t genAllLegalMoves(Board *board, Move *moves)
             square = bitScanForward(piece);
             switch(pieceType) {
                 case PAWN:
-                    attacks = PATTK;
-                    attacks <<= square - 9;
+                    attacks = 0;
                     if (color_to_move == WHITE)
-                        attacks &= ~RANK[(square / 8) - 1];
+                    {
+                        attacks |= square << 9 & ~AFILE;
+                        attacks |= square << 7 & ~HFILE;
+                    }
                     else
-                        attacks &= ~RANK[(square / 8) + 1];
+                    {
+                        attacks |= square >> 9 & ~AFILE;
+                        attacks |= square >> 7 & ~HFILE;
+                    }
                     attacks &= foes | (0x1UL << bgetenp(board->info));
                     if (color_to_move == WHITE)
                         attacks |= 0x1UL << (square + 8);
                     else
                         attacks |= 0x1UL << (square - 8);
-                    if ((square / 8) == 1)
+                    if ((square / 8) == 1 && color_to_move == WHITE)
                         attacks |= 0x1UL << (square + 16);
-                    else if ((square / 8) == 7)
+                    else if ((square / 8) == 6 && color_to_move == BLACK)
                         attacks |= 0x1UL << (square - 16);
                     bitmap |= attacks ^ (attacks & friends);
                     break;
 
                 case KNIGHT:
-                    rank = square / 8 - C3 / 8;
                     file = square % 8 - C3 % 8;
                     attacks = NMOV;
-                    for (i=C3/8; i<rank; i++)
-                        attacks <<= 8;
-                    for (i=C3/8; i>rank; i--)
-                        attacks >>= 8;
-                    // ~HFILE and ~AFILE prevent wrap-around
-                    for (i=C3%8; i<file; i++)
-                        attacks = (attacks << 1) & ~HFILE;
-                    for (i=C3%8; i>file; i--)
-                        attacks = (attacks >> 1) & ~AFILE;
+
+                    if (square < IC3)
+                        attacks >>= IC3 - square;
+                    if (square > IC3)
+                        attacks <<= square - IC3;
+
+                    if (file == 0 || file == 1)
+                        attacks &= ~(HFILE | FILELIST[6]);
+                    if (file == 6 || file == 7)
+                        attacks &= ~(AFILE | FILELIST[1]);
                     bitmap |= attacks ^ (attacks & friends);
                     break;
 
@@ -320,4 +325,105 @@ Board getDefaultBoard()
     b.info = (0xf << 1) | 0x0;
 
     return b;
+}
+
+void printBoard(Board *board) 
+{
+    printBoardInfo(board->info);
+    for (int rank=7; rank >= 0; rank--)
+    {
+        printf("%d  ", rank+1);
+        for (int file=0; file < 8; file++)
+        {
+            int squareIdx = rank*8 + file;
+            uint64_t square = 1UL << squareIdx;
+            int pieceType;
+            for (pieceType=0; pieceType<12; pieceType++)
+                if (board->pieces[pieceType] & square) break;
+            switch (pieceType) 
+            {
+                case PAWN + WHITE:
+                    printf("p ");
+                    break;
+                case KNIGHT + WHITE:
+                    printf("n ");
+                    break;
+                case BISHOP + WHITE:
+                    printf("b ");
+                    break;
+                case ROOK + WHITE:
+                    printf("r ");
+                    break;
+                case QUEEN + WHITE:
+                    printf("q ");
+                    break;
+                case KING + WHITE:
+                    printf("k ");
+                    break;
+                case PAWN + BLACK:
+                    printf("P ");
+                    break;
+                case KNIGHT + BLACK:
+                    printf("N ");
+                    break;
+                case BISHOP + BLACK:
+                    printf("B ");
+                    break;
+                case ROOK + BLACK:
+                    printf("R ");
+                    break;
+                case QUEEN + BLACK:
+                    printf("Q ");
+                    break;
+                case KING + BLACK:
+                    printf("K ");
+                    break;
+                default:
+                    printf("_ ");
+                    break;
+            }
+        }
+        printf("\n");
+    }
+    printf("\n   a b c d e f g h \n");
+}
+
+void printMove(Move move)
+{
+    printf("raw move: 0x%04x, ", move);
+    printBytesBinary(4, move);
+    printf("\n");
+    printf("Color: ");
+    if (mgetcol(move)) printf("Black\n"); else printf("White\n");
+    printf("Promotion: ");
+    switch (mgetprom(move)) 
+    {
+        case PAWN:
+        case _PAWN:
+            printf("Pawn\n");
+            break;
+        case KNIGHT:
+        case _KNIGHT:
+            printf("Knight\n");
+            break;
+        case BISHOP:
+        case _BISHOP:
+            printf("Bishop\n");
+            break;
+        case ROOK:
+        case _ROOK:
+            printf("Rook\n");
+            break;
+        case QUEEN:
+        case _QUEEN:
+            printf("Queen\n");
+            break;
+        case KING:
+        case _KING:
+            printf("King\n");
+            break;
+    }
+    printf("Source: %c%c\n", mgetsrc(move) % 8 + 'A', mgetsrc(move) / 8 + '1');
+    printf("Destination: %c%c\n", mgetdst(move) % 8 + 'A', mgetdst(move) / 8 + '1');
+    printf("Weight: %d\n", mgetweight(move));
 }

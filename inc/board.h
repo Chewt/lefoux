@@ -278,4 +278,14 @@ Board getDefaultBoard();
  */
 void printBoardInfo(uint16_t info);
 
+/*
+ * @param board the board to print to stdout
+ */
+void printBoard(Board *board);
+
+/*
+ * @param move move to pretty print
+ */
+void printMove(Move move);
+
 #endif /* end of include guard: BOARD_H */

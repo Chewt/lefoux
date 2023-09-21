@@ -208,6 +208,13 @@ int tests()
     b = getDefaultBoard();
     Move allMoves[MAX_MOVES_PER_POSITION];
     RUN_TEST( (genAllLegalMoves(&b, allMoves)), int_res, "%d", 20 );
+
+    for (int i=0; i<int_res; i++) 
+    {
+        printMove(allMoves[i]);
+    }
+
+
     m = _WHITE | (PAWN << 4) | (IH2 << 13) | (IH4 << 7);
     boardMove(&b, m);
     RUN_TEST( (genAllLegalMoves(&b, allMoves)), int_res, "%d", 20 );
