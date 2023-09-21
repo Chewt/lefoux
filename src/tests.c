@@ -217,6 +217,11 @@ int tests()
     m = _WHITE | (PAWN << 4) | (IH4 << 13) | (IH5 << 7);
     boardMove(&b, m);
     RUN_TEST( (genAllLegalMoves(&b, allMoves)), int_res, "%d", 29 );
+    m = _BLACK | (PAWN << 4) | (IG7 << 13) | (IG5 << 7);
+    boardMove(&b, m);
+    RUN_TEST( (genAllLegalMoves(&b, allMoves)), int_res, "%d", 22 );
+
+
 
     fprintf(stderr, "Tests passed: %s%d%s of %d\n",
             good, pass, clear, pass + fail);
