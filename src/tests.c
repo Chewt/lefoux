@@ -118,98 +118,98 @@ int tests()
     RUN_TEST( bitScanReverse(  0xF00  ), int_res, "%d", 11 );
     RUN_TEST( shiftWrapLeft( 0xFF00000000000000UL, 8 ), uint64_t_res, "%lx",
             0xFFUL);
-RUN_TEST( shiftWrapRight( 0xFFUL, 8 ), uint64_t_res, "%lx",
-        0xFF00000000000000UL);
-RUN_TEST( getNumBits( 0xFFUL ), int_res, "%d", 8 );
-RUN_TEST( getNumBits( 0UL ), int_res, "%d", 0 );
-RUN_TEST_FMT( magicLookupRook( 0x103UL , IA1 ), uint64_t_res,
-        printBitboard, 0x102UL);
-RUN_TEST_FMT( magicLookupRook( 0xFFFFUL , IA1 ), uint64_t_res,
-        printBitboard, 0x102UL);
-RUN_TEST_FMT( magicLookupRook( 0xFFFFUL << 48, IA1 ), uint64_t_res,
-        printBitboard, ((AFILE | RANK[0]) & ~1UL) & ~RANK[7] );
+    RUN_TEST( shiftWrapRight( 0xFFUL, 8 ), uint64_t_res, "%lx",
+            0xFF00000000000000UL);
+    RUN_TEST( getNumBits( 0xFFUL ), int_res, "%d", 8 );
+    RUN_TEST( getNumBits( 0UL ), int_res, "%d", 0 );
+    RUN_TEST_FMT( magicLookupRook( 0x103UL , IA1 ), uint64_t_res,
+            printBitboard, 0x102UL);
+    RUN_TEST_FMT( magicLookupRook( 0xFFFFUL , IA1 ), uint64_t_res,
+            printBitboard, 0x102UL);
+    RUN_TEST_FMT( magicLookupRook( 0xFFFFUL << 48, IA1 ), uint64_t_res,
+            printBitboard, ((AFILE | RANK[0]) & ~1UL) & ~RANK[7] );
 
    RUN_TEST_FMT( magicLookupBishop( 0xFFFFFFUL , IB2 ), uint64_t_res,
    printBitboard, 0x50005UL);
    RUN_TEST_FMT( magicLookupBishop( 0xFFFFUL << 48, IB2 ), uint64_t_res,
    printBitboard, 0x0040201008050005 );
 
-/* boardMove tests */
-Board b = getDefaultBoard();
-Move m = _WHITE | (PAWN << 4) | (IE2 << 13) | (IE4 << 7);
-boardMove(&b, m);
-RUN_TEST_CUSTOM("pawn e2e4 boardMove", b.pieces[PAWN], uint64_t_res,
-        printBitboard, (RANK[1] ^ E2) | E4);
-RUN_TEST_CUSTOM("pawn e2e4 board info", b.info, uint16_t_res,
-        printBoardInfo, ((0x3f & IE3) << 5) | 0xf << 1 | 0x1);
-b = getDefaultBoard();
-b.pieces[KNIGHT] = 0UL;
-b.pieces[BISHOP] = 0UL;
-m = _WHITE | (ROOK << 4) | (IA1 << 13) | (IB1 << 7);
-boardMove(&b, m);
-RUN_TEST_CUSTOM("queenside white rook affect castling", b.info, uint16_t_res,
-        printBoardInfo, (0x7 << 1) | _BLACK);
-b = getDefaultBoard();
-b.pieces[KNIGHT] = 0UL;
-b.pieces[BISHOP] = 0UL;
-m = _WHITE | (ROOK << 4) | (IH1 << 13) | (IG1 << 7);
-boardMove(&b, m);
-RUN_TEST_CUSTOM("kingside white rook affect castling", b.info, uint16_t_res,
-        printBoardInfo, (0xb << 1) | _BLACK);
-b = getDefaultBoard();
-b.pieces[KNIGHT] = 0UL;
-b.pieces[BISHOP] = 0UL;
-m = _WHITE | (KING << 4) | (IE1 << 13) | (IF1 << 7);
-boardMove(&b, m);
-RUN_TEST_CUSTOM("white king affect castling", b.info, uint16_t_res,
-        printBoardInfo, (0x3 << 1) | _BLACK);
-
-b = getDefaultBoard();
-b.info |= _BLACK;
-m = _BLACK | (PAWN << 4) | (IE7 << 13) | (IE5 << 7);
-RUN_TEST((mgetpiece(_BLACK | (PAWN << 4) | (IE7 << 13) | (IE5 << 7))), 
-        int_res, "%d", PAWN );
-RUN_TEST((mgetcol((_BLACK) | (PAWN << 4) | (IE7 << 13) | (IE5 << 7))), 
-        int_res, "%d", BLACK );
-RUN_TEST((mgetpiece(_BLACK | (PAWN << 4) | (IE7 << 13) | (IE5 << 7)) 
-            + mgetcol(_BLACK | (PAWN << 4) | (IE7 << 13) | (IE5 << 7))), 
-        int_res, "%d", _PAWN );
+    /* boardMove tests */
+    Board b = getDefaultBoard();
+    Move m = _WHITE | (PAWN << 4) | (IE2 << 13) | (IE4 << 7);
     boardMove(&b, m);
-    RUN_TEST_CUSTOM("pawn e7e5 boardMove", b.pieces[_PAWN], uint64_t_res,
-            printBitboard, (RANK[6] ^ E7) | E5);
-RUN_TEST_CUSTOM("pawn e7e5 board info", b.info, uint16_t_res,
-        printBoardInfo, ((0x3f & IE6) << 5) | 0xf << 1 | 0x0);
-b = getDefaultBoard();
-b.info |= 0x1;
-b.pieces[_KNIGHT] = 0UL;
-b.pieces[_BISHOP] = 0UL;
-m = _BLACK | (ROOK << 4) | (IA8 << 13) | (IB8 << 7);
-boardMove(&b, m);
-RUN_TEST_CUSTOM("queenside black rook affect castling", b.info, uint16_t_res,
-        printBoardInfo, (0xd << 1) | _WHITE);
-b = getDefaultBoard();
-b.info |= 0x1;
-b.pieces[_KNIGHT] = 0UL;
-b.pieces[_BISHOP] = 0UL;
-m = _BLACK | (ROOK << 4) | (IH8 << 13) | (IG8 << 7);
-boardMove(&b, m);
-RUN_TEST_CUSTOM("kingside rook affect castling", b.info, uint16_t_res,
-        printBoardInfo, (0xe << 1) | _WHITE);
-b = getDefaultBoard();
-b.info |= 0x1;
-b.pieces[_KNIGHT] = 0UL;
-b.pieces[_BISHOP] = 0UL;
-m = _BLACK | (KING << 4) | (IE8 << 13) | (IF8 << 7);
-boardMove(&b, m);
-RUN_TEST_CUSTOM("white king affect castling", b.info, uint16_t_res,
-        printBoardInfo, (0xc << 1) | _WHITE);
+    RUN_TEST_CUSTOM("pawn e2e4 boardMove", b.pieces[PAWN], uint64_t_res,
+            printBitboard, (RANK[1] ^ E2) | E4);
+    RUN_TEST_CUSTOM("pawn e2e4 board info", b.info, uint16_t_res,
+            printBoardInfo, ((0x3f & IE3) << 5) | 0xf << 1 | 0x1);
+    b = getDefaultBoard();
+    b.pieces[KNIGHT] = 0UL;
+    b.pieces[BISHOP] = 0UL;
+    m = _WHITE | (ROOK << 4) | (IA1 << 13) | (IB1 << 7);
+    boardMove(&b, m);
+    RUN_TEST_CUSTOM("queenside white rook affect castling", b.info, uint16_t_res,
+            printBoardInfo, (0x7 << 1) | _BLACK);
+    b = getDefaultBoard();
+    b.pieces[KNIGHT] = 0UL;
+    b.pieces[BISHOP] = 0UL;
+    m = _WHITE | (ROOK << 4) | (IH1 << 13) | (IG1 << 7);
+    boardMove(&b, m);
+    RUN_TEST_CUSTOM("kingside white rook affect castling", b.info, uint16_t_res,
+            printBoardInfo, (0xb << 1) | _BLACK);
+    b = getDefaultBoard();
+    b.pieces[KNIGHT] = 0UL;
+    b.pieces[BISHOP] = 0UL;
+    m = _WHITE | (KING << 4) | (IE1 << 13) | (IF1 << 7);
+    boardMove(&b, m);
+    RUN_TEST_CUSTOM("white king affect castling", b.info, uint16_t_res,
+            printBoardInfo, (0x3 << 1) | _BLACK);
+
+    b = getDefaultBoard();
+    b.info |= _BLACK;
+    m = _BLACK | (PAWN << 4) | (IE7 << 13) | (IE5 << 7);
+    RUN_TEST((mgetpiece(_BLACK | (PAWN << 4) | (IE7 << 13) | (IE5 << 7))), 
+            int_res, "%d", PAWN );
+    RUN_TEST((mgetcol((_BLACK) | (PAWN << 4) | (IE7 << 13) | (IE5 << 7))), 
+            int_res, "%d", BLACK );
+    RUN_TEST((mgetpiece(_BLACK | (PAWN << 4) | (IE7 << 13) | (IE5 << 7)) 
+                + mgetcol(_BLACK | (PAWN << 4) | (IE7 << 13) | (IE5 << 7))), 
+            int_res, "%d", _PAWN );
+        boardMove(&b, m);
+        RUN_TEST_CUSTOM("pawn e7e5 boardMove", b.pieces[_PAWN], uint64_t_res,
+                printBitboard, (RANK[6] ^ E7) | E5);
+    RUN_TEST_CUSTOM("pawn e7e5 board info", b.info, uint16_t_res,
+            printBoardInfo, ((0x3f & IE6) << 5) | 0xf << 1 | 0x0);
+    b = getDefaultBoard();
+    b.info |= 0x1;
+    b.pieces[_KNIGHT] = 0UL;
+    b.pieces[_BISHOP] = 0UL;
+    m = _BLACK | (ROOK << 4) | (IA8 << 13) | (IB8 << 7);
+    boardMove(&b, m);
+    RUN_TEST_CUSTOM("queenside black rook affect castling", b.info, uint16_t_res,
+            printBoardInfo, (0xd << 1) | _WHITE);
+    b = getDefaultBoard();
+    b.info |= 0x1;
+    b.pieces[_KNIGHT] = 0UL;
+    b.pieces[_BISHOP] = 0UL;
+    m = _BLACK | (ROOK << 4) | (IH8 << 13) | (IG8 << 7);
+    boardMove(&b, m);
+    RUN_TEST_CUSTOM("kingside rook affect castling", b.info, uint16_t_res,
+            printBoardInfo, (0xe << 1) | _WHITE);
+    b = getDefaultBoard();
+    b.info |= 0x1;
+    b.pieces[_KNIGHT] = 0UL;
+    b.pieces[_BISHOP] = 0UL;
+    m = _BLACK | (KING << 4) | (IE8 << 13) | (IF8 << 7);
+    boardMove(&b, m);
+    RUN_TEST_CUSTOM("white king affect castling", b.info, uint16_t_res,
+            printBoardInfo, (0xc << 1) | _WHITE);
 
 
 
-fprintf(stderr, "Tests passed: %s%d%s of %d\n",
-        good, pass, clear, pass + fail);
+    fprintf(stderr, "Tests passed: %s%d%s of %d\n",
+            good, pass, clear, pass + fail);
 #undef RUN_TEST
 #undef RUN_TEST_FMT
 
-return fail;
+    return fail;
 }

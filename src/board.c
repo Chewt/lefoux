@@ -220,7 +220,107 @@ void printBoardInfo(uint16_t info)
  */
 int8_t genAllLegalMoves(Board *board, Move *moves)
 {
-    return 0;
+    uint64_t piece;
+    uint64_t attacks;
+    int rank;
+    int file;
+    enumIndexSquare square;
+    int i;
+    int movecount = 0;
+    int color_to_move = (bgetcol(board->info)) ? BLACK : WHITE;
+    uint64_t friends = 0;
+    uint64_t foes = 0;
+    for (i = 0; i < 6; ++i)
+    {
+        friends |= board->pieces[i + (color_to_move ^ BLACK)];
+        foes |= board->pieces[i + color_to_move];
+    }
+    for (i = 0; i < 6; ++i)
+    {
+        uint64_t pieces = board->pieces[i + color_to_move];
+        while ((piece = pieces & -pieces)) {
+            uint64_t bitmap = 0;
+            square = bitScanForward(piece);
+            switch(i) {
+                case PAWN:
+                    attacks = PATTK;
+                    attacks <<= square - 9;
+                    if (color_to_move == WHITE)
+                        attacks &= ~RANK[(square / 8) - 1];
+                    else
+                        attacks &= ~RANK[(square / 8) + 1];
+                    attacks &= foes | (0x1UL << bgetenp(board->info));
+                    if (color_to_move == WHITE)
+                        attacks |= 0x1UL << (square + 8);
+                    else
+                        attacks |= 0x1UL << (square - 8);
+                    if ((square / 8) == 1)
+                        attacks |= 0x1UL << (square + 16);
+                    else if ((square / 8) == 7)
+                        attacks |= 0x1UL << (square - 16);
+                    bitmap |= attacks ^ (attacks & friends);
+                    break;
+
+                case KNIGHT:
+                    rank = square / 8 - C3 / 8;
+                    file = square % 8 - C3 % 8;
+                    attacks = NMOV;
+                    for (i=C3/8; i<rank; i++)
+                        attacks <<= 8;
+                    for (i=C3/8; i>rank; i--)
+                        attacks >>= 8;
+                    // ~HFILE and ~AFILE prevent wrap-around
+                    for (i=C3%8; i<file; i++)
+                        attacks = (attacks << 1) & ~HFILE;
+                    for (i=C3%8; i>file; i--)
+                        attacks = (attacks >> 1) & ~AFILE;
+                    bitmap |= attacks ^ (attacks & friends);
+                    break;
+
+                case BISHOP:
+                    attacks = magicLookupBishop((friends | foes), square);
+                    bitmap |= attacks ^ (attacks & friends);
+                    break;
+
+                case ROOK:
+                    attacks = magicLookupRook((friends | foes), square);
+                    bitmap |= attacks ^ (attacks & friends);
+                    break;
+
+                case QUEEN:
+                    attacks = magicLookupRook((friends | foes), square);
+                    bitmap |= attacks ^ (attacks & friends);
+                    attacks = magicLookupBishop((friends | foes), square);
+                    bitmap |= attacks ^ (attacks & friends);
+                    break;
+
+                case KING:
+                    rank = square / 8 - B2 / 8;
+                    file = square % 8 - B2 % 8;
+                    attacks = KMOV;
+                    for (i=B2/8; i<rank; i++)
+                        attacks <<= 8;
+                    for (i=B2/8; i>rank; i--)
+                        attacks >>= 8;
+                    // ~HFILE and ~AFILE prevent wrap-around
+                    for (i=B2%8; i<file; i++)
+                        attacks = (attacks << 1) & ~HFILE;
+                    for (i=B2%8; i>file; i--)
+                        attacks = (attacks >> 1) & ~AFILE;
+                    bitmap |= attacks ^ (attacks & friends);
+                    break;
+            }
+            uint64_t dst = bitmap & -bitmap;
+            while (dst)
+            {
+                moves[movecount++] = (square << 13) 
+                    | (bitScanForward(dst) << 7)
+                    | (i << 4)
+                    | bgetcol(board->info);
+            }
+        }
+    }
+    return movecount;
 }
 
 /*
