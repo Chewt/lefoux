@@ -218,11 +218,6 @@ int tests()
     boardMove(&b, m);
     RUN_TEST( (genAllLegalMoves(&b, allMoves)), int_res, "%d", 29 );
 
-    for (int i=0; i<int_res; i++) 
-    {
-        printMove(allMoves[i]);
-    }
-
     fprintf(stderr, "Tests passed: %s%d%s of %d\n",
             good, pass, clear, pass + fail);
 #undef RUN_TEST

@@ -143,7 +143,6 @@ int8_t genAllLegalMoves(Board *board, Move *moves)
     uint64_t piece;
     uint64_t attacks;
     uint64_t passiveMoves;
-    int rank;
     int file;
     enumIndexSquare square;
     int i;
