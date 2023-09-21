@@ -203,13 +203,26 @@ int tests()
     boardMove(&b, m);
     RUN_TEST_CUSTOM("white king affect castling", b.info, uint16_t_res,
             printBoardInfo, (0xc << 1) | _WHITE);
-
-
+    
+    // Test cases for genAllLegalMoves
+    b = getDefaultBoard();
+    Move allMoves[MAX_MOVES_PER_POSITION];
+    RUN_TEST( (genAllLegalMoves(&b, allMoves)), int_res, "%d", 20 );
+    m = _WHITE | (PAWN << 4) | (IH2 << 13) | (IH4 << 7);
+    boardMove(&b, m);
+    RUN_TEST( (genAllLegalMoves(&b, allMoves)), int_res, "%d", 20 );
+    m = _BLACK | (PAWN << 4) | (IE7 << 13) | (IE5 << 7);
+    boardMove(&b, m);
+    RUN_TEST( (genAllLegalMoves(&b, allMoves)), int_res, "%d", 21 );
+    m = _WHITE | (PAWN << 4) | (IH4 << 13) | (IH5 << 7);
+    boardMove(&b, m);
+    RUN_TEST( (genAllLegalMoves(&b, allMoves)), int_res, "%d", 27 );
 
     fprintf(stderr, "Tests passed: %s%d%s of %d\n",
             good, pass, clear, pass + fail);
 #undef RUN_TEST
 #undef RUN_TEST_FMT
+#undef RUN_TEST_CUSTOM
 
     return fail;
 }

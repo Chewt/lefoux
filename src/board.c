@@ -86,86 +86,6 @@ uint64_t magicLookupRook(uint64_t occupancy, enumIndexSquare square)
     return magicRookAttacks[square][occupancy];
 }
 
-// Returns an attack bitmap for the piece
-// type is the type of piece
-// pieces is a bitmap of all of that type of piece
-uint64_t getMoves(enumPiece type, uint64_t pieces, uint64_t friends, uint64_t foes)
-{
-    uint64_t bitmap = 0;
-    uint64_t piece;
-    uint64_t attacks;
-    int rank;
-    int file;
-    int i;
-    enumIndexSquare square;
-    // Isolate a piece to process, loop while there is a piece
-    while ((piece = pieces & -pieces)) {
-        square = bitScanForward(piece);
-        switch(type) {
-            case PAWN + WHITE:
-            case PAWN + BLACK:
-                break;
-
-            case KNIGHT + WHITE:
-            case KNIGHT + BLACK:
-                rank = square / 8 - C3 / 8;
-                file = square % 8 - C3 % 8;
-                attacks = NMOV;
-                for (i=C3/8; i<rank; i++)
-                    attacks <<= 8;
-                for (i=C3/8; i>rank; i--)
-                    attacks >>= 8;
-                // ~HFILE and ~AFILE prevent wrap-around
-                for (i=C3%8; i<file; i++)
-                    attacks = (attacks << 1) & ~HFILE;
-                for (i=C3%8; i>file; i--)
-                    attacks = (attacks >> 1) & ~AFILE;
-                bitmap |= attacks ^ (attacks & friends);
-                break;
-
-            case BISHOP + WHITE:
-            case BISHOP + BLACK:
-                attacks = magicLookupBishop((friends | foes), square);
-                bitmap |= attacks ^ (attacks & friends);
-                break;
-
-            case ROOK + WHITE:
-            case ROOK + BLACK:
-                attacks = magicLookupRook((friends | foes), square);
-                bitmap |= attacks ^ (attacks & friends);
-                break;
-
-            case QUEEN + WHITE:
-            case QUEEN + BLACK:
-                attacks = magicLookupRook((friends | foes), square);
-                bitmap |= attacks ^ (attacks & friends);
-                attacks = magicLookupBishop((friends | foes), square);
-                bitmap |= attacks ^ (attacks & friends);
-                break;
-
-            case KING + WHITE:
-            case KING + BLACK:
-                rank = square / 8 - B2 / 8;
-                file = square % 8 - B2 % 8;
-                attacks = KMOV;
-                for (i=B2/8; i<rank; i++)
-                    attacks <<= 8;
-                for (i=B2/8; i>rank; i--)
-                    attacks >>= 8;
-                // ~HFILE and ~AFILE prevent wrap-around
-                for (i=B2%8; i<file; i++)
-                    attacks = (attacks << 1) & ~HFILE;
-                for (i=B2%8; i>file; i--)
-                    attacks = (attacks >> 1) & ~AFILE;
-                bitmap |= attacks ^ (attacks & friends);
-                break;
-        }
-        // Mask away piece that was already processed
-        pieces ^= piece;
-    }
-    return bitmap;
-}
-
 void printBitboard(uint64_t bb)
 {
     for (int rank=7; rank >= 0; rank--)
@@ -235,13 +155,13 @@ int8_t genAllLegalMoves(Board *board, Move *moves)
         friends |= board->pieces[i + (color_to_move ^ BLACK)];
         foes |= board->pieces[i + color_to_move];
     }
-    for (i = 0; i < 6; ++i)
+    for (int pieceType = 0; pieceType < 6; ++pieceType)
     {
-        uint64_t pieces = board->pieces[i + color_to_move];
+        uint64_t pieces = board->pieces[pieceType + color_to_move];
         while ((piece = pieces & -pieces)) {
             uint64_t bitmap = 0;
             square = bitScanForward(piece);
-            switch(i) {
+            switch(pieceType) {
                 case PAWN:
                     attacks = PATTK;
                     attacks <<= square - 9;
@@ -310,14 +230,18 @@ int8_t genAllLegalMoves(Board *board, Move *moves)
                     bitmap |= attacks ^ (attacks & friends);
                     break;
             }
-            uint64_t dst = bitmap & -bitmap;
-            while (dst)
+            uint64_t dst;
+            while ((dst = bitmap & -bitmap))
             {
                 moves[movecount++] = (square << 13) 
                     | (bitScanForward(dst) << 7)
-                    | (i << 4)
+                    | (pieceType << 4)
                     | bgetcol(board->info);
+                // Iterate to next move
+                bitmap ^= dst;
             }
+            // Iterate to next piece
+            pieces ^= piece;
         }
     }
     return movecount;
