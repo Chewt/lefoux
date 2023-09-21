@@ -103,7 +103,7 @@ Command allcommands[] = {
     {"ucinewgame", ucinewgame},
     {"stop", stop},
     {"ponderhit", ponderhit},
-    { 0 }
+    {{0},0} // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=53119
 };
 
 int ProcessCommand(Board* board, char* command)
