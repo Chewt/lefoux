@@ -163,21 +163,21 @@ void perftRun(Board* board, PerftInfo* pi, uint8_t depth)
             {
                 if (bgetcol(board->info) == _WHITE)
                 {
-                  if ((bgetcas(board->info) & 0x8) &&
-                      mgetdst(movelist[i]) == IB1)
-                      pi->castles++;
-                  else if ((bgetcas(board->info) & 0x4) &&
-                      mgetdst(movelist[i]) == IG1)
-                      pi->castles++;
+                    if ((bgetcas(board->info) & 0x8) &&
+                            mgetdst(movelist[i]) == IC1)
+                        pi->castles++;
+                    else if ((bgetcas(board->info) & 0x4) &&
+                            mgetdst(movelist[i]) == IG1)
+                        pi->castles++;
                 }
                 else if (bgetcol(board->info) == _BLACK)
                 {
-                  if ((bgetcas(board->info) & 0x2) &&
-                      mgetdst(movelist[i]) == IB8)
-                      pi->castles++;
-                  else if ((bgetcas(board->info) & 0x1) &&
-                      mgetdst(movelist[i]) == IG8)
-                      pi->castles++;
+                    if ((bgetcas(board->info) & 0x2) &&
+                            mgetdst(movelist[i]) == IC8)
+                        pi->castles++;
+                    else if ((bgetcas(board->info) & 0x1) &&
+                            mgetdst(movelist[i]) == IG8)
+                        pi->castles++;
                 }
             }
         }

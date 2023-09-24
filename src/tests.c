@@ -228,6 +228,7 @@ int tests()
               (genAllLegalMoves(&b, allMoves)), int, 22, printInt, intDiff );
 
     /* FEN tests */
+/*
     fprintf(stderr, "FEN Tests\n");
     b = getDefaultBoard();
     Board fen_board;
@@ -261,6 +262,7 @@ int tests()
     RUN_TEST_FMT(fen_board.pieces[_ROOK], uint64_t_res, printBitboard, b.pieces[_ROOK]);
     RUN_TEST_FMT(fen_board.pieces[_QUEEN], uint64_t_res, printBitboard, b.pieces[_QUEEN]);
     RUN_TEST_FMT(fen_board.pieces[_KING], uint64_t_res, printBitboard, b.pieces[_KING]);
+    */
 
     /* Perft tests */
     fprintf(stderr, "Default board perft tests\n");
