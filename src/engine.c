@@ -147,13 +147,19 @@ void perftRun(Board* board, PerftInfo* pi, uint8_t depth)
             // En passants
             if (mgetpiece(movelist[i]) == PAWN &&
                 (mgetdst(movelist[i]) == bgetenp(board->info))) {
+                pi->captures++;
                 pi->enpassants++;
-                printMove(movelist[i]);
             }
 
             // Checks
-            if (mgetdstbb(movelist[i]) & board->pieces[enemyColor + KING])
+            boardMove(board, movelist[i]);
+            printBoard(board);
+            printMove(movelist[i]);
+            uint64_t attack_map = genAllAttackMap(board, enemyColor ^ BLACK);
+            printBitboard(attack_map);
+            if (attack_map & board->pieces[enemyColor + KING])
                 pi->checks++;
+            undoMove(board, movelist[i]);
 
             // Castles
             if (mgetpiece(movelist[i]) == KING)

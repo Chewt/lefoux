@@ -161,10 +161,21 @@ typedef enum {
  *
  * Information is laid out like so:
  *
+ * Pre-Weight generation:
+ *
+ * | Prev BoardInfo
+ * | w/ taken piece | Source      | Destination | Piece   | Promote | Color
+ * +-----------------------------------------------------------------------+
+ * | 8 & 3 bits     | 6 bits      | 6 bits      | 3 bit   | 3 bit   | 1 bit |
+ * +-----------------------------------------------------------------------+
+ *
+ * Post Weight generation:
+ *
  * | Weight        | Source      | Destination | Piece   | Promote | Color
  * +-----------------------------------------------------------------------+
  * | 8 bits        | 6 bits      | 6 bits      | 3 bit   | 3 bit   | 1 bit |
  * +-----------------------------------------------------------------------+
+ *
  * The first 5 bits are not used.
  *
  * - Weight is the calculated strength of the move.
@@ -264,7 +275,7 @@ int8_t genAllLegalMoves(Board *board, Move *moves);
  * @param board a pointer to a Board struct
  * @param move a Move to make on the board
  */
-void boardMove(Board *board, Move move);
+uint16_t boardMove(Board *board, Move move);
 
 /*
  * getDefaultBoard
@@ -287,5 +298,16 @@ void printBoard(Board *board);
  * @param move move to pretty print
  */
 void printMove(Move move);
+
+/* TODO Stuff
+ */
+uint64_t getPieceAttackMap(Board* board, int pieceType, int square);
+
+/* TODO Stuff
+ */
+void undoMove(Board* board, Move move);
+/* TODO Stuff
+ */
+uint64_t genAllAttackMap(Board* board, int color);
 
 #endif /* end of include guard: BOARD_H */

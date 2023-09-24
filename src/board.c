@@ -132,6 +132,175 @@ void printBoardInfo(uint16_t info)
             (bgetcol(info) & 0x1) ? 'B' : 'W');
 }
 
+uint64_t getPieceAttackMap(Board* board, int pieceType, int square)
+{
+    uint64_t attacks = 0;
+    uint64_t friends = 0;
+    uint64_t foes = 0;
+    uint64_t bitmap = 0;
+    int color_to_move = (bgetcol(board->info)) ? BLACK : WHITE;
+    uint64_t passiveMoves;
+    int i;
+    int file;
+    for (i = 0; i < 6; ++i)
+    {
+        foes |= board->pieces[i + (color_to_move ^ BLACK)];
+        friends |= board->pieces[i + color_to_move];
+    }
+    switch(pieceType) {
+        case PAWN:
+            file = square % 8 - C3 % 8;
+            attacks = PATTK;
+            // Mask attacks depending on color
+            if (color_to_move == WHITE)
+                attacks &= RANK[2];
+            else
+                attacks &= RANK[0];
+
+            if (square < IB2)
+                attacks >>= IB2 - square;
+            if (square > IB2)
+                attacks <<= square - IB2;
+
+            if (file == 0)
+                attacks &= ~(HFILE);
+            if (file == 7)
+                attacks &= ~(AFILE);
+
+            // Add en passant
+            attacks &= foes | (0x1UL << bgetenp(board->info));
+
+            passiveMoves = 0;
+            if (color_to_move == WHITE)
+                passiveMoves |= 0x1UL << (square + 8);
+            else
+                passiveMoves |= 0x1UL << (square - 8);
+            if (((square / 8) == 1) && (color_to_move == WHITE))
+                passiveMoves |= 0x1UL << (square + 16);
+            else if (((square / 8) == 6) && (color_to_move == BLACK))
+                passiveMoves |= 0x1UL << (square - 16);
+            bitmap |= attacks ^ (attacks & friends);
+            bitmap |= passiveMoves ^ (passiveMoves & (friends | foes));
+            break;
+
+        case KNIGHT:
+            file = square % 8 - C3 % 8;
+            attacks = NMOV;
+
+            if (square < IC3)
+                attacks >>= IC3 - square;
+            if (square > IC3)
+                attacks <<= square - IC3;
+
+            if (file == 0 || file == 1)
+                attacks &= ~(HFILE | FILELIST[6]);
+            if (file == 6 || file == 7)
+                attacks &= ~(AFILE | FILELIST[1]);
+            bitmap |= attacks ^ (attacks & friends);
+            break;
+
+        case BISHOP:
+            attacks = magicLookupBishop((friends | foes), square);
+            bitmap |= attacks ^ (attacks & friends);
+            break;
+
+        case ROOK:
+            attacks = magicLookupRook((friends | foes), square);
+            bitmap |= attacks ^ (attacks & friends);
+            break;
+
+        case QUEEN:
+            attacks = magicLookupRook((friends | foes), square);
+            bitmap |= attacks ^ (attacks & friends);
+            attacks = magicLookupBishop((friends | foes), square);
+            bitmap |= attacks ^ (attacks & friends);
+            break;
+
+        case KING:
+            file = square % 8 - B2 % 8;
+            attacks = KMOV;
+
+            if (square < IB2)
+                attacks >>= IB2 - square;
+            if (square > IB2)
+                attacks <<= square - IB2;
+
+            if (file == 0)
+                attacks &= ~(HFILE);
+            if (file == 7)
+                attacks &= ~(AFILE);
+            bitmap |= attacks ^ (attacks & friends);
+            break;
+    }
+    return bitmap;
+}
+
+uint64_t genAllAttackMap(Board* board, int color)
+{
+    uint64_t piece;
+    enumIndexSquare square;
+    int color_to_move = color;
+    uint64_t bitmap = 0;
+    for (int pieceType = 0; pieceType < 6; ++pieceType)
+    {
+        uint64_t pieces = board->pieces[pieceType + color_to_move];
+        while ((piece = pieces & -pieces)) {
+            square = bitScanForward(piece);
+
+            // GET ATTACK BITMAP FOR CURRENT PIECE
+            bitmap |= getPieceAttackMap(board, pieceType, square);
+
+            // Iterate to next piece
+            pieces ^= piece;
+        }
+    }
+    return bitmap;
+    
+}
+
+void undoMove(Board* board, Move move)
+{
+    // Restore boardinfo
+    board->info = move >> 22;
+    int move_color = (mgetcol(move)) ? BLACK : WHITE;
+    // Get undo move
+    board->pieces[move_color + mgetpiece(move)] ^= (mgetsrcbb(move) 
+                                                  | mgetdstbb(move));
+    // restore taken piece
+    if (((move >> 19) & 0x7) != 0x7)
+        board->pieces[(move_color^BLACK) + ((move>>19)&0x7)] ^= mgetdstbb(move);
+}
+
+int checkIfLegal(Board* board, Move* move)
+{
+    uint16_t prev_info = boardMove(board, *move);
+    *move |= prev_info << 19;
+    int color_to_move = (bgetcol(board->info)) ? BLACK : WHITE;
+    uint64_t all_attacks = 0UL;
+    for (int pieceType = 0; pieceType < 6; ++pieceType)
+    {
+        uint64_t piece;
+        uint64_t pieces = board->pieces[pieceType + color_to_move];
+        while ((piece = pieces & -pieces)) {
+            int square = bitScanForward(piece);
+
+            // GET ATTACK BITMAP FOR CURRENT PIECE
+            all_attacks |= getPieceAttackMap(board, pieceType, square);
+
+            // Iterate to next piece
+            pieces ^= piece;
+        }
+    }
+    int is_legal = 1;
+    if (all_attacks & board->pieces[(color_to_move ^ BLACK) + KING])
+    {
+        board->info = prev_info >> 3;
+        is_legal = 0;
+    }
+    undoMove(board, *move);
+    return is_legal;
+}
+
 /*
  * Populates the array moves with legal moves
  * and returns the number of legal moves.
@@ -141,110 +310,32 @@ void printBoardInfo(uint16_t info)
 int8_t genAllLegalMoves(Board *board, Move *moves)
 {
     uint64_t piece;
-    uint64_t attacks;
-    uint64_t passiveMoves;
-    int file;
     enumIndexSquare square;
-    int i;
     int movecount = 0;
     int color_to_move = (bgetcol(board->info)) ? BLACK : WHITE;
-    uint64_t friends = 0;
-    uint64_t foes = 0;
-    for (i = 0; i < 6; ++i)
-    {
-        foes |= board->pieces[i + (color_to_move ^ BLACK)];
-        friends |= board->pieces[i + color_to_move];
-    }
     for (int pieceType = 0; pieceType < 6; ++pieceType)
     {
         uint64_t pieces = board->pieces[pieceType + color_to_move];
         while ((piece = pieces & -pieces)) {
-            uint64_t bitmap = 0;
             square = bitScanForward(piece);
-            switch(pieceType) {
-                case PAWN:
-                    attacks = 0;
-                    if (color_to_move == WHITE)
-                    {
-                        attacks |= square << 9 & ~AFILE;
-                        attacks |= square << 7 & ~HFILE;
-                    }
-                    else
-                    {
-                        attacks |= square >> 9 & ~AFILE;
-                        attacks |= square >> 7 & ~HFILE;
-                    }
-                    attacks &= foes | (0x1UL << bgetenp(board->info));
-                    passiveMoves = 0;
-                    if (color_to_move == WHITE)
-                        passiveMoves |= 0x1UL << (square + 8);
-                    else
-                        passiveMoves |= 0x1UL << (square - 8);
-                    if ((square / 8) == 1 && color_to_move == WHITE)
-                        passiveMoves |= 0x1UL << (square + 16);
-                    else if ((square / 8) == 6 && color_to_move == BLACK)
-                        passiveMoves |= 0x1UL << (square - 16);
-                    bitmap |= attacks ^ (attacks & friends);
-                    bitmap |= passiveMoves ^ (passiveMoves & friends) 
-                              ^ (passiveMoves & foes);
-                    break;
-
-                case KNIGHT:
-                    file = square % 8 - C3 % 8;
-                    attacks = NMOV;
-
-                    if (square < IC3)
-                        attacks >>= IC3 - square;
-                    if (square > IC3)
-                        attacks <<= square - IC3;
-
-                    if (file == 0 || file == 1)
-                        attacks &= ~(HFILE | FILELIST[6]);
-                    if (file == 6 || file == 7)
-                        attacks &= ~(AFILE | FILELIST[1]);
-                    bitmap |= attacks ^ (attacks & friends);
-                    break;
-
-                case BISHOP:
-                    attacks = magicLookupBishop((friends | foes), square);
-                    bitmap |= attacks ^ (attacks & friends);
-                    break;
-
-                case ROOK:
-                    attacks = magicLookupRook((friends | foes), square);
-                    bitmap |= attacks ^ (attacks & friends);
-                    break;
-
-                case QUEEN:
-                    attacks = magicLookupRook((friends | foes), square);
-                    bitmap |= attacks ^ (attacks & friends);
-                    attacks = magicLookupBishop((friends | foes), square);
-                    bitmap |= attacks ^ (attacks & friends);
-                    break;
-
-                case KING:
-                    file = square % 8 - B2 % 8;
-                    attacks = KMOV;
-
-                    if (square < IB2)
-                        attacks >>= IB2 - square;
-                    if (square > IB2)
-                        attacks <<= square - IB2;
-
-                    if (file == 0 || file == 1)
-                        attacks &= ~(HFILE);
-                    if (file == 6 || file == 7)
-                        attacks &= ~(AFILE);
-                    bitmap |= attacks ^ (attacks & friends);
-                    break;
-            }
             uint64_t dst;
+
+            // GET ATTACK BITMAP FOR CURRENT PIECE
+            uint64_t bitmap = getPieceAttackMap(board, pieceType, square);
+
             while ((dst = bitmap & -bitmap))
             {
                 moves[movecount++] = (square << 13) 
                     | (bitScanForward(dst) << 7)
                     | (pieceType << 4)
                     | bgetcol(board->info);
+
+                // Check if move is legal, if not decrement movecount
+                if (!checkIfLegal(board, (moves + movecount - 1)))
+                {
+                    movecount--;
+                }
+                
                 // Iterate to next move
                 bitmap ^= dst;
             }
@@ -263,12 +354,20 @@ int8_t genAllLegalMoves(Board *board, Move *moves)
  * This could save on memory by storing a move instead of
  * a whole board in minMax()
  */
-void boardMove(Board *board, Move move)
+uint16_t boardMove(Board *board, Move move)
 {
     /* Remove enemy piece if possible */
+    int enemy_piece = 7;
+    uint16_t prev_info = board->info;
     int i;
-    for (i = 0; i < 12; ++i)
+    int enemy_color = (bgetcol(board->info) == _BLACK) ? BLACK : WHITE;
+    for (i = enemy_color; i < 6 + enemy_color; ++i)
+    {
+        if (board->pieces[i] & mgetdstbb(move))
+            enemy_piece = i;
         board->pieces[i] &= ~mgetdstbb(move);
+    }
+    prev_info = (prev_info << 3) | (enemy_piece & 0x7);
 
     /* Remove src piece */
     board->pieces[mgetpiece(move) + mgetcol(move)] ^= mgetsrcbb(move);
@@ -307,7 +406,7 @@ void boardMove(Board *board, Move move)
             board->info = ((mgetsrc(move) - 8) << 5) | (0x1f & board->info);
     }
 
-    return;
+    return prev_info;
 }
 
 Board getDefaultBoard()
@@ -403,7 +502,7 @@ void printMove(Move move)
     {
         case PAWN:
         case _PAWN:
-            printf("None\n");
+            printf("Pawn\n");
             break;
         case KNIGHT:
         case _KNIGHT:

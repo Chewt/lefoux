@@ -263,7 +263,7 @@ int tests()
     b = getDefaultBoard();
     RUN_PERFT_TEST(&b, 2, ((PerftInfo){400UL, 0, 0, 0, 0, 0 ,0}));
     b = getDefaultBoard();
-    RUN_PERFT_TEST(&b, 3, ((PerftInfo){8902UL, 34, 0, 12, 0, 0 ,0}));
+    RUN_PERFT_TEST(&b, 3, ((PerftInfo){8902UL, 34, 0, 0, 0, 12 ,0}));
 
 
     fprintf(stderr, "Tests passed: %s%d%s of %d\n",
