@@ -8,6 +8,7 @@
 #include "board.h"
 #include "bitHelpers.h"
 
+
 /*
  * Returns the net weight of pieces on the board. A positive number
  * indicates an advantage for white, negative for black, 0 for even.
@@ -144,14 +145,14 @@ void perftRun(Board* board, PerftInfo* pi, uint8_t depth)
                 pi->captures++;
 
             // En passants
-            if (mgetdst(movelist[i]) == bgetenp(board->info))
-            {
+            if (mgetpiece(movelist[i]) == PAWN &&
+                (mgetdst(movelist[i]) == bgetenp(board->info))) {
                 pi->enpassants++;
                 printMove(movelist[i]);
             }
 
             // Checks
-            if (mgetdst(movelist[i]) == board->pieces[enemyColor + KING])
+            if (mgetdstbb(movelist[i]) & board->pieces[enemyColor + KING])
                 pi->checks++;
 
             // Castles
@@ -160,19 +161,19 @@ void perftRun(Board* board, PerftInfo* pi, uint8_t depth)
                 if (bgetcol(board->info) == _WHITE)
                 {
                   if ((bgetcas(board->info) & 0x8) &&
-                      mgetdst(movelist[i] == IB1))
+                      mgetdst(movelist[i]) == IB1)
                       pi->castles++;
                   else if ((bgetcas(board->info) & 0x4) &&
-                      mgetdst(movelist[i] == IG1))
+                      mgetdst(movelist[i]) == IG1)
                       pi->castles++;
                 }
                 else if (bgetcol(board->info) == _BLACK)
                 {
                   if ((bgetcas(board->info) & 0x2) &&
-                      mgetdst(movelist[i] == IB8))
+                      mgetdst(movelist[i]) == IB8)
                       pi->castles++;
                   else if ((bgetcas(board->info) & 0x1) &&
-                      mgetdst(movelist[i] == IG8))
+                      mgetdst(movelist[i]) == IG8)
                       pi->castles++;
                 }
             }

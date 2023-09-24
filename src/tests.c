@@ -3,42 +3,13 @@
 
 #include "board.h"
 #include "engine.h"
-
 #include "bitHelpers.h"
+#include "timer.h"
 
 char *good = "\e[32m";
 char *bad = "\e[31m";
 char *clear = "\e[0m";
 char *nameColor = "\e[33m";
-
-int runPerftTest(Board* b, int depth, PerftInfo expected)
-{
-    PerftInfo pi = { 0 };
-    perftRun(b, &pi, depth);
-    if (      (pi.nodes == expected.nodes)
-            && (pi.captures == expected.captures)
-            && (pi.enpassants == expected.enpassants)
-            && (pi.checks == expected.checks)
-            && (pi.checkmates == expected.checkmates)
-            && (pi.castles == expected.castles)
-            && (pi.promotions == expected.promotions))
-    {
-        fprintf(stderr, "Test %sPerft depth %d%s %spassed%s\n",
-                nameColor, depth, clear, good, clear); 
-        return 1;
-    }
-    else
-    {
-        fprintf(stderr, "Test %sPerft depth %d%s %sfailed%s\n",
-                nameColor, depth, clear, bad, clear); 
-        fprintf(stderr, "  Expected: %s\n", good);
-        printPerft(expected);
-        fprintf(stderr, "%s  Actual:   %s\n", clear, bad);
-        printPerft(pi);
-        fprintf(stderr, "%s\n", clear);
-        return 0;
-    }
-}
 
 /*
  * tests
@@ -55,6 +26,7 @@ int tests()
     int int_res;
     uint64_t uint64_t_res;
     uint16_t uint16_t_res;
+    Timer t;
 
     /*
      * RUN_TEST
@@ -147,7 +119,9 @@ int tests()
 }
 #define RUN_PERFT_TEST( b, depth, expected ) { \
     PerftInfo pi = { 0 }; \
+    StartTimer(&t); \
     perftRun(b, &pi, depth); \
+    StopTimer(&t); \
     if (      (pi.nodes == expected.nodes) \
             && (pi.captures == expected.captures) \
             && (pi.enpassants == expected.enpassants) \
@@ -156,14 +130,14 @@ int tests()
             && (pi.castles == expected.castles) \
             && (pi.promotions == expected.promotions)) \
     { \
-        fprintf(stderr, "Test %sPerft depth %d%s %spassed%s\n", \
-                nameColor, depth, clear, good, clear);  \
+        fprintf(stderr, "Test %sPerft depth %d%s %spassed%s. Took %.6f seconds\n", \
+                nameColor, depth, clear, good, clear, t.time_taken);  \
         pass++; \
     } \
     else \
     { \
-        fprintf(stderr, "Test %sPerft depth %d%s %sfailed%s\n", \
-                nameColor, depth, clear, bad, clear);  \
+        fprintf(stderr, "Test %sPerft depth %d%s %sfailed%s. Took %.6f seconds\n", \
+                nameColor, depth, clear, bad, clear, t.time_taken);  \
         fprintf(stderr, "  Expected: %s\n", good); \
         printPerft(expected); \
         fprintf(stderr, "%s  Actual:   %s\n", clear, bad); \
@@ -289,7 +263,7 @@ int tests()
     b = getDefaultBoard();
     RUN_PERFT_TEST(&b, 2, ((PerftInfo){400UL, 0, 0, 0, 0, 0 ,0}));
     b = getDefaultBoard();
-    RUN_PERFT_TEST(&b, 3, ((PerftInfo){8902UL, 34, 0, 0, 0, 12 ,0}));
+    RUN_PERFT_TEST(&b, 3, ((PerftInfo){8902UL, 34, 0, 12, 0, 0 ,0}));
 
 
     fprintf(stderr, "Tests passed: %s%d%s of %d\n",

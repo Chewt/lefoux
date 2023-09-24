@@ -398,12 +398,40 @@ void printMove(Move move)
     printf("\n");
     printf("Color: ");
     if (mgetcol(move)) printf("Black\n"); else printf("White\n");
+    printf("Piece: ");
+    switch (mgetpiece(move)) 
+    {
+        case PAWN:
+        case _PAWN:
+            printf("None\n");
+            break;
+        case KNIGHT:
+        case _KNIGHT:
+            printf("Knight\n");
+            break;
+        case BISHOP:
+        case _BISHOP:
+            printf("Bishop\n");
+            break;
+        case ROOK:
+        case _ROOK:
+            printf("Rook\n");
+            break;
+        case QUEEN:
+        case _QUEEN:
+            printf("Queen\n");
+            break;
+        case KING:
+        case _KING:
+            printf("King\n");
+            break;
+    }
     printf("Promotion: ");
     switch (mgetprom(move)) 
     {
         case PAWN:
         case _PAWN:
-            printf("Pawn\n");
+            printf("None\n");
             break;
         case KNIGHT:
         case _KNIGHT:
