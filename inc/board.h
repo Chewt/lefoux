@@ -311,8 +311,13 @@ uint64_t genPieceAttackMap(Board* board, int pieceType, int color, int square);
 /* TODO Stuff
  */
 void undoMove(Board* board, Move move);
+
 /* TODO Stuff
  */
 uint64_t genAllAttackMap(Board* board, int color);
+
+/* TODO Stuff
+ */
+void loadFen(Board* board, char* fen);
 
 #endif /* end of include guard: BOARD_H */

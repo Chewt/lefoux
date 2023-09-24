@@ -1,5 +1,7 @@
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
 #include "board.h"
 #include "bitHelpers.h"
@@ -166,7 +168,6 @@ uint64_t genPieceAttackMap(Board* board, int pieceType, int color, int square)
     uint64_t attacks = 0;
     uint64_t bitmap = 0;
     int color_to_move = color;
-    uint64_t passiveMoves;
     int file;
     int i;
     uint64_t friends = 0;
@@ -384,12 +385,12 @@ uint16_t boardMove(Board *board, Move move)
     int enemy_piece = 7;
     uint16_t prev_info = board->info;
     int i;
-    int enemy_color = (bgetcol(board->info) == _BLACK) ? BLACK : WHITE;
-    for (i = enemy_color; i < 6 + enemy_color; ++i)
+    int enemy_color = (bgetcol(board->info) == _BLACK) ? WHITE : BLACK;
+    for (i = 0; i < 6; ++i)
     {
-        if (board->pieces[i] & mgetdstbb(move))
+        if (board->pieces[i + enemy_color] & mgetdstbb(move))
             enemy_piece = i;
-        board->pieces[i] &= ~mgetdstbb(move);
+        board->pieces[i + enemy_color] &= ~mgetdstbb(move);
     }
     prev_info = (prev_info << 3) | (enemy_piece & 0x7);
 
@@ -425,9 +426,9 @@ uint16_t boardMove(Board *board, Move move)
     if (mgetpiece(move) == PAWN)
     {
         if ((mgetsrcbb(move) & RANK[1]) && (mgetdstbb(move) & RANK[3]))
-            board->info = ((mgetsrc(move) + 8) << 5) | (0x1f & board->info);
+            board->info |= ((mgetsrc(move) + 8) << 5);
         else if ((mgetsrcbb(move) & RANK[6]) && (mgetdstbb(move) & RANK[4]))
-            board->info = ((mgetsrc(move) - 8) << 5) | (0x1f & board->info);
+            board->info |= ((mgetsrc(move) - 8) << 5);
     }
 
     return prev_info;
@@ -580,4 +581,83 @@ void printMove(Move move)
     printf("Source: %c%c\n", mgetsrc(move) % 8 + 'A', mgetsrc(move) / 8 + '1');
     printf("Destination: %c%c\n", mgetdst(move) % 8 + 'A', mgetdst(move) / 8 + '1');
     printf("Weight: %d\n", mgetweight(move));
+}
+
+void loadFen(Board* board, char* fen)
+{
+    memset(board, 0, sizeof(Board));
+    char* fen_copy = malloc(strlen(fen) + 1);
+    strcpy(fen_copy, fen);
+    char* token = NULL;
+    token = strtok(fen_copy, " ");
+    int i = 0;
+    char curr_char = token[i];
+    int rank = 7;
+    int file = 0;
+    while (curr_char)
+    {
+        if (curr_char == 'p')
+            board->pieces[BLACK + PAWN] |= 0x1ULL << (rank * 8 + file++);
+        else if (curr_char == 'b')
+            board->pieces[BLACK + BISHOP] |= 0x1ULL << (rank * 8 + file++);
+        else if (curr_char == 'n')
+            board->pieces[BLACK + KNIGHT] |= 0x1ULL << (rank * 8 + file++);
+        else if (curr_char == 'r')
+            board->pieces[BLACK + ROOK] |= 0x1ULL << (rank * 8 + file++);
+        else if (curr_char == 'q')
+            board->pieces[BLACK + QUEEN] |= 0x1ULL << (rank * 8 + file++);
+        else if (curr_char == 'k')
+            board->pieces[BLACK + KING] |= 0x1ULL << (rank * 8 + file++);
+        else if (curr_char == 'P')
+            board->pieces[WHITE + PAWN] |= 0x1ULL << (rank * 8 + file++);
+        else if (curr_char == 'B')   
+            board->pieces[WHITE + BISHOP] |= 0x1ULL << (rank * 8 + file++);
+        else if (curr_char == 'N')   
+            board->pieces[WHITE + KNIGHT] |= 0x1ULL << (rank * 8 + file++);
+        else if (curr_char == 'R')   
+            board->pieces[WHITE + ROOK] |= 0x1ULL << (rank * 8 + file++);
+        else if (curr_char == 'Q')   
+            board->pieces[WHITE + QUEEN] |= 0x1ULL << (rank * 8 + file++);
+        else if (curr_char == 'K')   
+            board->pieces[WHITE + KING] |= 0x1ULL << (rank * 8 + file++);
+        else if (curr_char <= '9' && curr_char >= '0')
+            file += curr_char - '0';
+        else if (curr_char <= '/')
+        {
+            rank--;
+            file = 0;
+        }
+        i++;
+        curr_char = token[i];
+    }
+
+    token = strtok(NULL, " ");
+    if (token[0] == 'w')
+        board->info = _WHITE;
+    else if (token[0] == 'b')
+        board->info = _BLACK;
+
+    token = strtok(NULL, " ");
+    i = 0;
+    curr_char = token[i];
+    while (curr_char)
+    {
+        if      (curr_char == 'Q')
+            board->info |= 0x8 << 1;
+        else if (curr_char == 'K')
+            board->info |= 0x4 << 1;
+        else if (curr_char == 'q')
+            board->info |= 0x2 << 1;
+        else if (curr_char == 'k')
+            board->info |= 0x1 << 1;
+        else if (curr_char == '-')
+            board->info |= 0x0 << 1;
+        curr_char = token[++i];
+    }
+
+    token = strtok(NULL, " ");
+    if (!strcmp(token, "-"))
+        board->info |= 0x0UL << 5;
+    else
+        board->info |= (((token[0] - 'a') + ((token[1]) - '1') * 8)) << 5;
 }
