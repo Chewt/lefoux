@@ -469,40 +469,40 @@ void printBoard(Board *board)
             switch (pieceType) 
             {
                 case PAWN + WHITE:
-                    printf("p ");
-                    break;
-                case KNIGHT + WHITE:
-                    printf("n ");
-                    break;
-                case BISHOP + WHITE:
-                    printf("b ");
-                    break;
-                case ROOK + WHITE:
-                    printf("r ");
-                    break;
-                case QUEEN + WHITE:
-                    printf("q ");
-                    break;
-                case KING + WHITE:
-                    printf("k ");
-                    break;
-                case PAWN + BLACK:
                     printf("P ");
                     break;
-                case KNIGHT + BLACK:
+                case KNIGHT + WHITE:
                     printf("N ");
                     break;
-                case BISHOP + BLACK:
+                case BISHOP + WHITE:
                     printf("B ");
                     break;
-                case ROOK + BLACK:
+                case ROOK + WHITE:
                     printf("R ");
                     break;
-                case QUEEN + BLACK:
+                case QUEEN + WHITE:
                     printf("Q ");
                     break;
-                case KING + BLACK:
+                case KING + WHITE:
                     printf("K ");
+                    break;
+                case PAWN + BLACK:
+                    printf("p ");
+                    break;
+                case KNIGHT + BLACK:
+                    printf("n ");
+                    break;
+                case BISHOP + BLACK:
+                    printf("b ");
+                    break;
+                case ROOK + BLACK:
+                    printf("r ");
+                    break;
+                case QUEEN + BLACK:
+                    printf("q ");
+                    break;
+                case KING + BLACK:
+                    printf("k ");
                     break;
                 default:
                     printf("_ ");

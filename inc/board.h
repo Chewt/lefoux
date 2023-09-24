@@ -21,8 +21,13 @@
  *
  * - En passant describes where an en passant play can happen if at all.
  * - Castling describes which castling options are still possible.
- *   In order, it goes white queenside, white kingside, black queenside, black
- *   kingside.
+ *   0 0 0 0 <- lsb
+ *   ^ ^ ^ ^
+ *   | | | |
+ *   | | | black kingside
+ *   | | black queenside
+ *   | white kingside
+ *   white queenside
  * - Color to play describes whether it is black or white to play.
  * - The square a1 is bitboard & 1, b1 is bitboard & 2, ...,
  *   a2 is bitboard & 0x0100, b2 is bitboard & 0x0200, ..., g8 is

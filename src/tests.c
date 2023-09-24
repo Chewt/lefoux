@@ -6,10 +6,20 @@
 #include "bitHelpers.h"
 #include "timer.h"
 
-char *good = "\e[32m";
-char *bad = "\e[31m";
-char *clear = "\e[0m";
-char *nameColor = "\e[33m";
+static char *good = "\e[32m";
+static char *bad = "\e[31m";
+static char *clear = "\e[0m";
+static char *nameColor = "\e[33m";
+
+void printInt(int x) { printf("%d", x); }
+
+int intDiff(int a, int b) { return a - b; }
+
+void printLongHex(uint64_t x) { printf("0x%lx", x); }
+
+uint64_t xor64bit(uint64_t a, uint64_t b) { return a ^ b; }
+
+int xorInt(int a, int b) { return a ^ b; }
 
 /*
  * tests
@@ -23,83 +33,26 @@ int tests()
 
 
     char *name;
-    int int_res;
-    uint64_t uint64_t_res;
-    uint16_t uint16_t_res;
     Timer t;
 
     /*
      * RUN_TEST
-     * @brief macro to quickly create a test.
-     * @param testCode literal code to run in the test
-     * @param resultVar an already declared variable to store result of testCode
-     *   into.
-     * @param resultFmt a printf format specifier for resultVar
-     * @param expected the expected value, compared to resultVar
-     */
-#define RUN_TEST( testCode, resultVar, resultFmt, expected ) { \
-    name = #testCode; \
-    if (( resultVar = (testCode) ) == ( expected )) \
-    { \
-        fprintf(stderr, "Test %s%s%s %spassed%s.\n", \
-                nameColor, name, clear, good, clear); \
-        pass++; \
-    } \
-    else \
-    { \
-        fprintf(stderr, "Test %s%s%s %sfailed%s. \n" \
-                "  Expected: %s" resultFmt "%s\n" \
-                "  Actual:   %s" resultFmt "%s\n" \
-                "  Diff:     %s" resultFmt "%s\n", \
-                nameColor, name, clear, bad, clear, \
-                good, (expected), clear, \
-                bad, resultVar, clear, \
-                bad, resultVar ^ (expected), clear); \
-        fail++; \
-    } \
-}
-
-    /*
-     * RUN_TEST_FMT
      * @brief macro to quickly create a test with custom resultVar formatting
-     * @param testCode literal code to run in the test
-     * @param resultVar an already declared variable to store result of testCode
-     *   into.
-     * @param resultFmt a function that formats resultVar and expected.
+     * @param label Label string for the current test
+     * @param testCode Code that resolves to a value to store into resultVar
+     * @param resultType the type of the result of testCode and expected
      * @param expected the expected value, compared to resultVar
+     * @param resultFmt a function that formats result of testCode, diff and 
+     *   expected.
+     * @param diff a function that computes the difference between the result 
+     *   of testCode and expected. Returns 0 or NULL when there is no difference
      */
-#define RUN_TEST_FMT( testCode, resultVar, resultFmt, expected ) { \
-    name = #testCode; \
-    if (( resultVar = (testCode) ) == (expected) ) \
+#define RUN_TEST( label, testCode, resultType, expected, resultFmt, diff ) { \
     { \
-        fprintf(stderr, "Test %s%s%s %spassed%s.\n", \
-                nameColor, name, clear, good, clear); \
-        pass++; \
-    } \
-    else \
-    { \
-        fprintf(stderr, "Test %s%s%s %sfailed%s. \n", \
-                nameColor, name, clear, bad, clear); \
-        fprintf(stderr, "  Expected: %s\n", good); \
-        resultFmt(expected); \
-        fprintf(stderr, "%s  Actual:   %s\n", clear, bad); \
-        resultFmt(resultVar); \
-        fprintf(stderr, "%s\n", clear); \
-        fail++; \
-    } \
-}
-    /*
-     * RUN_TEST_CUSTOM
-     * @brief macro to quickly create a test with custom resultVar formatting
-     * @param testVar Test value to compare against
-     * @param resultVar an already declared variable to store result of testCode
-     *   into.
-     * @param resultFmt a function that formats resultVar and expected.
-     * @param expected the expected value, compared to resultVar
-     */
-#define RUN_TEST_CUSTOM( label, testVar, resultVar, resultFmt, expected ) { \
     name = label; \
-    if (( resultVar = (testVar) ) == (expected) ) \
+    resultType resultVar = (testCode); \
+    resultType resDiff = diff(resultVar, (expected)); \
+    if ( !resDiff ) \
     { \
         fprintf(stderr, "Test %s%s%s %spassed%s.\n", \
                 nameColor, name, clear, good, clear); \
@@ -113,8 +66,11 @@ int tests()
         resultFmt(expected); \
         fprintf(stderr, "%s  Actual:   %s\n", clear, bad); \
         resultFmt(resultVar); \
+        fprintf(stderr, "%s  Diff:   %s\n", clear, bad); \
+        resultFmt(resDiff); \
         fprintf(stderr, "%s\n", clear); \
         fail++; \
+    } \
     } \
 }
 #define RUN_PERFT_TEST( b, depth, expected ) { \
@@ -147,112 +103,129 @@ int tests()
     } \
 }
 
-    RUN_TEST( bitScanForward(  0xF00  ), int_res, "%d", 8 );
-    RUN_TEST( bitScanReverse(  0xF00  ), int_res, "%d", 11 );
-    RUN_TEST( shiftWrapLeft( 0xFF00000000000000UL, 8 ), uint64_t_res, "%lx",
-            0xFFUL);
-    RUN_TEST( shiftWrapRight( 0xFFUL, 8 ), uint64_t_res, "%lx",
-            0xFF00000000000000UL);
-    RUN_TEST( getNumBits( 0xFFUL ), int_res, "%d", 8 );
-    RUN_TEST( getNumBits( 0UL ), int_res, "%d", 0 );
-    RUN_TEST_FMT( magicLookupRook( 0x103UL , IA1 ), uint64_t_res,
-            printBitboard, 0x102UL);
-    RUN_TEST_FMT( magicLookupRook( 0xFFFFUL , IA1 ), uint64_t_res,
-            printBitboard, 0x102UL);
-    RUN_TEST_FMT( magicLookupRook( 0xFFFFUL << 48, IA1 ), uint64_t_res,
-            printBitboard, ((AFILE | RANK[0]) & ~1UL) & ~RANK[7] );
+    fprintf(stderr, "Bithelpers\n");
+    RUN_TEST( "bitScanForward", bitScanForward(  0xF00  ), int, 8, printInt, 
+              intDiff);
+    RUN_TEST( "bitScanReverse", bitScanReverse(  0xF00  ), int, 11, printInt, 
+              intDiff );
+    RUN_TEST( "shiftWrapLeft", shiftWrapLeft( 0xFF00000000000000UL, 8 ), 
+              uint64_t, 0xFFUL, printLongHex, xor64bit);
+    RUN_TEST( "shiftWrapRight", shiftWrapRight( 0xFFUL, 8 ), 
+              uint64_t, 0xFF00000000000000UL, printLongHex, xor64bit);
+    RUN_TEST( "getNumBits", getNumBits( 0xFFUL ), int, 8, printInt, intDiff);
 
-   RUN_TEST_FMT( magicLookupBishop( 0xFFFFFFUL , IB2 ), uint64_t_res,
-   printBitboard, 0x50005UL);
-   RUN_TEST_FMT( magicLookupBishop( 0xFFFFUL << 48, IB2 ), uint64_t_res,
-   printBitboard, 0x0040201008050005 );
+    fprintf(stderr, "Magic Lookup\n");
+    RUN_TEST( "magicLookupRook few occupancies", 
+              magicLookupRook( 0x103UL , IA1 ), uint64_t, 0x102UL,
+              printBitboard, xor64bit);
+    RUN_TEST( "magicLookupRook many obstructions", 
+              magicLookupRook( 0xFFFFUL , IA1 ), uint64_t, 0x102UL,
+              printBitboard, xor64bit);
+    RUN_TEST( "magicLookupRook many occupancies, few obstructions",
+              magicLookupRook( 0xFFFFUL << 48, IA1 ), uint64_t, 
+              (((AFILE | RANK[0]) & ~1UL) & ~RANK[7]), printBitboard, 
+              xor64bit);
+
+   RUN_TEST( "magicLookupBishop many obstructions",
+             magicLookupBishop( 0xFFFFFFUL , IB2 ), uint64_t, 0x50005UL,
+             printBitboard, xor64bit);
+   RUN_TEST( "magicLookupBishop few obstructions",
+             magicLookupBishop( 0xFFFFUL << 48, IB2 ), uint64_t, 
+             0x0040201008050005, printBitboard, xor64bit );
 
     /* boardMove tests */
     Board b = getDefaultBoard();
     Move m = _WHITE | (PAWN << 4) | (IE2 << 13) | (IE4 << 7);
     boardMove(&b, m);
-    RUN_TEST_CUSTOM("pawn e2e4 boardMove", b.pieces[PAWN], uint64_t_res,
-            printBitboard, (RANK[1] ^ E2) | E4);
-    RUN_TEST_CUSTOM("pawn e2e4 board info", b.info, uint16_t_res,
-            printBoardInfo, ((0x3f & IE3) << 5) | 0xf << 1 | 0x1);
+    RUN_TEST("pawn e2e4 boardMove", b.pieces[PAWN], uint64_t, (RANK[1] ^ E2)|E4,
+            printBitboard, xor64bit);
+    RUN_TEST("pawn e2e4 board info", b.info, uint16_t,
+                    ((0x3f & IE3) << 5) | 0xf << 1 | 0x1, printBoardInfo, xorInt);
     b = getDefaultBoard();
     b.pieces[KNIGHT] = 0UL;
     b.pieces[BISHOP] = 0UL;
     m = _WHITE | (ROOK << 4) | (IA1 << 13) | (IB1 << 7);
     boardMove(&b, m);
-    RUN_TEST_CUSTOM("queenside white rook affect castling", b.info, uint16_t_res,
-            printBoardInfo, (0x7 << 1) | _BLACK);
+    RUN_TEST("queenside white rook affect castling", b.info, uint16_t, 
+             (0x7 << 1) | _BLACK, printBoardInfo, xorInt);
     b = getDefaultBoard();
     b.pieces[KNIGHT] = 0UL;
     b.pieces[BISHOP] = 0UL;
     m = _WHITE | (ROOK << 4) | (IH1 << 13) | (IG1 << 7);
     boardMove(&b, m);
-    RUN_TEST_CUSTOM("kingside white rook affect castling", b.info, uint16_t_res,
-            printBoardInfo, (0xb << 1) | _BLACK);
+    RUN_TEST("kingside white rook affect castling", b.info, uint16_t, 
+             (0xb << 1) | _BLACK, printBoardInfo, xorInt);
     b = getDefaultBoard();
     b.pieces[KNIGHT] = 0UL;
     b.pieces[BISHOP] = 0UL;
     m = _WHITE | (KING << 4) | (IE1 << 13) | (IF1 << 7);
     boardMove(&b, m);
-    RUN_TEST_CUSTOM("white king affect castling", b.info, uint16_t_res,
-            printBoardInfo, (0x3 << 1) | _BLACK);
+    RUN_TEST("white king affect castling", b.info, uint16_t,
+             (0x3 << 1) | _BLACK, printBoardInfo, xorInt );
 
     b = getDefaultBoard();
     b.info |= _BLACK;
     m = _BLACK | (PAWN << 4) | (IE7 << 13) | (IE5 << 7);
-    RUN_TEST((mgetpiece(_BLACK | (PAWN << 4) | (IE7 << 13) | (IE5 << 7))), 
-            int_res, "%d", PAWN );
-    RUN_TEST((mgetcol((_BLACK) | (PAWN << 4) | (IE7 << 13) | (IE5 << 7))), 
-            int_res, "%d", BLACK );
-    RUN_TEST((mgetpiece(_BLACK | (PAWN << 4) | (IE7 << 13) | (IE5 << 7)) 
-                + mgetcol(_BLACK | (PAWN << 4) | (IE7 << 13) | (IE5 << 7))), 
-            int_res, "%d", _PAWN );
-        boardMove(&b, m);
-        RUN_TEST_CUSTOM("pawn e7e5 boardMove", b.pieces[_PAWN], uint64_t_res,
-                printBitboard, (RANK[6] ^ E7) | E5);
-    RUN_TEST_CUSTOM("pawn e7e5 board info", b.info, uint16_t_res,
-            printBoardInfo, ((0x3f & IE6) << 5) | 0xf << 1 | 0x0);
+    RUN_TEST("mgetpiece macro check", 
+             (mgetpiece(_BLACK | (PAWN << 4) | (IE7 << 13) | (IE5 << 7))), 
+              int, PAWN, printInt, intDiff);
+    RUN_TEST("mgetcol macro check", 
+             (mgetcol(_BLACK | (PAWN << 4) | (IE7 << 13) | (IE5 << 7))), 
+              int, BLACK, printInt, intDiff);
+    RUN_TEST("mgetcol + mgetpiece check", 
+             (mgetcol(_BLACK | (PAWN << 4) | (IE7 << 13) | (IE5 << 7))), 
+              int, _PAWN, printInt, intDiff);
+    boardMove(&b, m);
+    RUN_TEST("pawn e7e5 boardMove", b.pieces[_PAWN], uint64_t, 
+             (RANK[6] ^ E7) | E5, printBitboard, xor64bit);
+    RUN_TEST("pawn e7e5 board info", b.info, uint16_t, 
+             ((0x3f & IE6) << 5) | 0xf << 1 | 0x0, printBoardInfo, xorInt);
     b = getDefaultBoard();
     b.info |= 0x1;
     b.pieces[_KNIGHT] = 0UL;
     b.pieces[_BISHOP] = 0UL;
     m = _BLACK | (ROOK << 4) | (IA8 << 13) | (IB8 << 7);
     boardMove(&b, m);
-    RUN_TEST_CUSTOM("queenside black rook affect castling", b.info, uint16_t_res,
-            printBoardInfo, (0xd << 1) | _WHITE);
+    RUN_TEST("queenside black rook affect castling", b.info, uint16_t,
+            (0xd << 1) | _WHITE, printBoardInfo, xorInt);
     b = getDefaultBoard();
     b.info |= 0x1;
     b.pieces[_KNIGHT] = 0UL;
     b.pieces[_BISHOP] = 0UL;
     m = _BLACK | (ROOK << 4) | (IH8 << 13) | (IG8 << 7);
     boardMove(&b, m);
-    RUN_TEST_CUSTOM("kingside rook affect castling", b.info, uint16_t_res,
-            printBoardInfo, (0xe << 1) | _WHITE);
+    RUN_TEST("kingside rook affect castling", b.info, uint16_t,
+            (0xe << 1) | _WHITE, printBoardInfo, xorInt);
     b = getDefaultBoard();
     b.info |= 0x1;
     b.pieces[_KNIGHT] = 0UL;
     b.pieces[_BISHOP] = 0UL;
     m = _BLACK | (KING << 4) | (IE8 << 13) | (IF8 << 7);
     boardMove(&b, m);
-    RUN_TEST_CUSTOM("white king affect castling", b.info, uint16_t_res,
-            printBoardInfo, (0xc << 1) | _WHITE);
+    RUN_TEST("white king affect castling", b.info, uint16_t,
+            (0xc << 1) | _WHITE, printBoardInfo, xorInt);
     
     // Test cases for genAllLegalMoves
     b = getDefaultBoard();
     Move allMoves[MAX_MOVES_PER_POSITION];
-    RUN_TEST( (genAllLegalMoves(&b, allMoves)), int_res, "%d", 20 );
+    RUN_TEST( "genAllLegalMoves from starting position",
+              (genAllLegalMoves(&b, allMoves)), int, 20, printInt, intDiff );
     m = _WHITE | (PAWN << 4) | (IH2 << 13) | (IH4 << 7);
     boardMove(&b, m);
-    RUN_TEST( (genAllLegalMoves(&b, allMoves)), int_res, "%d", 20 );
+    RUN_TEST( "genAllLegalMoves from 1. h4",
+              (genAllLegalMoves(&b, allMoves)), int, 20, printInt, intDiff );
     m = _BLACK | (PAWN << 4) | (IE7 << 13) | (IE5 << 7);
     boardMove(&b, m);
-    RUN_TEST( (genAllLegalMoves(&b, allMoves)), int_res, "%d", 21 );
+    RUN_TEST( "genAllLegalMoves from 1. h4 e5",
+              (genAllLegalMoves(&b, allMoves)), int, 21, printInt, intDiff );
     m = _WHITE | (PAWN << 4) | (IH4 << 13) | (IH5 << 7);
     boardMove(&b, m);
-    RUN_TEST( (genAllLegalMoves(&b, allMoves)), int_res, "%d", 29 );
+    RUN_TEST( "genAllLegalMoves from 1. h4 e5 2. h5",
+              (genAllLegalMoves(&b, allMoves)), int, 29, printInt, intDiff );
     m = _BLACK | (PAWN << 4) | (IG7 << 13) | (IG5 << 7);
     boardMove(&b, m);
-    RUN_TEST( (genAllLegalMoves(&b, allMoves)), int_res, "%d", 22 );
+    RUN_TEST( "genAllLegalMoves from 1. h4 e5 2. h5 g5",
+              (genAllLegalMoves(&b, allMoves)), int, 22, printInt, intDiff );
 
     /* Perft tests */
     fprintf(stderr, "Default board perft tests\n");
