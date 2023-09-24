@@ -254,19 +254,55 @@ int tests()
     boardMove(&b, m);
     RUN_TEST( (genAllLegalMoves(&b, allMoves)), int_res, "%d", 22 );
 
+    /* FEN tests */
+    fprintf(stderr, "FEN Tests\n");
+    b = getDefaultBoard();
+    Board fen_board;
+    loadFen(&fen_board, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    RUN_TEST_FMT(fen_board.info, uint16_t_res, printBoardInfo, b.info);
+    RUN_TEST_FMT(fen_board.pieces[ PAWN], uint64_t_res, printBitboard, b.pieces[ PAWN]);
+    RUN_TEST_FMT(fen_board.pieces[ KNIGHT], uint64_t_res, printBitboard, b.pieces[ KNIGHT]);
+    RUN_TEST_FMT(fen_board.pieces[ BISHOP], uint64_t_res, printBitboard, b.pieces[ BISHOP]);
+    RUN_TEST_FMT(fen_board.pieces[ ROOK], uint64_t_res, printBitboard, b.pieces[ ROOK]);
+    RUN_TEST_FMT(fen_board.pieces[ QUEEN], uint64_t_res, printBitboard, b.pieces[ QUEEN]);
+    RUN_TEST_FMT(fen_board.pieces[ KING], uint64_t_res, printBitboard, b.pieces[ KING]);
+    RUN_TEST_FMT(fen_board.pieces[_PAWN], uint64_t_res, printBitboard, b.pieces[_PAWN]);
+    RUN_TEST_FMT(fen_board.pieces[_KNIGHT], uint64_t_res, printBitboard, b.pieces[_KNIGHT]);
+    RUN_TEST_FMT(fen_board.pieces[_BISHOP], uint64_t_res, printBitboard, b.pieces[_BISHOP]);
+    RUN_TEST_FMT(fen_board.pieces[_ROOK], uint64_t_res, printBitboard, b.pieces[_ROOK]);
+    RUN_TEST_FMT(fen_board.pieces[_QUEEN], uint64_t_res, printBitboard, b.pieces[_QUEEN]);
+    RUN_TEST_FMT(fen_board.pieces[_KING], uint64_t_res, printBitboard, b.pieces[_KING]);
+    m = _WHITE | (PAWN << 4) | (IE2 << 13) | (IE4 << 7);
+    boardMove(&b, m);
+    loadFen(&fen_board, "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1");
+    RUN_TEST_FMT(fen_board.info, uint16_t_res, printBoardInfo, b.info);
+    RUN_TEST_FMT(fen_board.pieces[ PAWN], uint64_t_res, printBitboard, b.pieces[ PAWN]);
+    RUN_TEST_FMT(fen_board.pieces[ KNIGHT], uint64_t_res, printBitboard, b.pieces[ KNIGHT]);
+    RUN_TEST_FMT(fen_board.pieces[ BISHOP], uint64_t_res, printBitboard, b.pieces[ BISHOP]);
+    RUN_TEST_FMT(fen_board.pieces[ ROOK], uint64_t_res, printBitboard, b.pieces[ ROOK]);
+    RUN_TEST_FMT(fen_board.pieces[ QUEEN], uint64_t_res, printBitboard, b.pieces[ QUEEN]);
+    RUN_TEST_FMT(fen_board.pieces[ KING], uint64_t_res, printBitboard, b.pieces[ KING]);
+    RUN_TEST_FMT(fen_board.pieces[_PAWN], uint64_t_res, printBitboard, b.pieces[_PAWN]);
+    RUN_TEST_FMT(fen_board.pieces[_KNIGHT], uint64_t_res, printBitboard, b.pieces[_KNIGHT]);
+    RUN_TEST_FMT(fen_board.pieces[_BISHOP], uint64_t_res, printBitboard, b.pieces[_BISHOP]);
+    RUN_TEST_FMT(fen_board.pieces[_ROOK], uint64_t_res, printBitboard, b.pieces[_ROOK]);
+    RUN_TEST_FMT(fen_board.pieces[_QUEEN], uint64_t_res, printBitboard, b.pieces[_QUEEN]);
+    RUN_TEST_FMT(fen_board.pieces[_KING], uint64_t_res, printBitboard, b.pieces[_KING]);
+
     /* Perft tests */
     fprintf(stderr, "Default board perft tests\n");
     b = getDefaultBoard();
     RUN_PERFT_TEST(&b, 0, ((PerftInfo){1, 0, 0, 0, 0, 0 ,0}));
-    b = getDefaultBoard();
     RUN_PERFT_TEST(&b, 1, ((PerftInfo){20, 0, 0, 0, 0, 0 ,0}));
-    b = getDefaultBoard();
     RUN_PERFT_TEST(&b, 2, ((PerftInfo){400, 0, 0, 0, 0, 0 ,0}));
-    b = getDefaultBoard();
     RUN_PERFT_TEST(&b, 3, ((PerftInfo){8902, 34, 0, 0, 0, 12 ,0}));
-    b = getDefaultBoard();
     RUN_PERFT_TEST(&b, 4, ((PerftInfo){197281, 1576, 0, 0, 0, 469 ,0}));
+    //RUN_PERFT_TEST(&b, 5, ((PerftInfo){4865609, 82719, 258, 0, 0, 809099 ,0}));
 
+    fprintf(stderr, "Position 2 perft tests\n");
+    loadFen(&b, "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ");
+    RUN_PERFT_TEST(&b, 1, ((PerftInfo){48, 8, 0, 2, 0, 0 ,0}));
+    RUN_PERFT_TEST(&b, 2, ((PerftInfo){2039, 351, 1, 91, 0, 3 ,0}));
 
     fprintf(stderr, "Tests passed: %s%d%s of %d\n",
             good, pass, clear, pass + fail);
