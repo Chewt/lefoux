@@ -301,7 +301,7 @@ void printMove(Move move);
 
 /* TODO Stuff
  */
-uint64_t getPieceAttackMap(Board* board, int pieceType, int square);
+uint64_t genPieceAttackMap(Board* board, int pieceType, int color, int square);
 
 /* TODO Stuff
  */

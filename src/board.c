@@ -132,19 +132,48 @@ void printBoardInfo(uint16_t info)
             (bgetcol(info) & 0x1) ? 'B' : 'W');
 }
 
-uint64_t getPieceAttackMap(Board* board, int pieceType, int square)
+uint64_t genPassiveKingMoves(Board* board, int color, int square)
 {
-    uint64_t attacks = 0;
+    return 0UL;
+}
+
+uint64_t genPassivePawnMoves(Board* board, int color, int square)
+{
+    int i;
     uint64_t friends = 0;
     uint64_t foes = 0;
-    uint64_t bitmap = 0;
-    int color_to_move = (bgetcol(board->info)) ? BLACK : WHITE;
-    uint64_t passiveMoves;
-    int i;
-    int file;
     for (i = 0; i < 6; ++i)
     {
-        foes |= board->pieces[i + (color_to_move ^ BLACK)];
+        foes    |= board->pieces[i + (color ^ BLACK)];
+        friends |= board->pieces[i + color];
+    }
+    uint64_t passiveMoves = 0;
+    if (color == WHITE)
+        passiveMoves |= 0x1UL << (square + 8);
+    else
+        passiveMoves |= 0x1UL << (square - 8);
+
+    passiveMoves ^= (passiveMoves & (friends | foes));
+    if (((square / 8) == 1) && (color == WHITE))
+        passiveMoves |= passiveMoves << 8;
+    else if (((square / 8) == 6) && (color == BLACK))
+        passiveMoves |= passiveMoves >> 8;
+    return passiveMoves ^ (passiveMoves & (friends | foes));
+}
+
+uint64_t genPieceAttackMap(Board* board, int pieceType, int color, int square)
+{
+    uint64_t attacks = 0;
+    uint64_t bitmap = 0;
+    int color_to_move = color;
+    uint64_t passiveMoves;
+    int file;
+    int i;
+    uint64_t friends = 0;
+    uint64_t foes = 0;
+    for (i = 0; i < 6; ++i)
+    {
+        foes    |= board->pieces[i + (color_to_move ^ BLACK)];
         friends |= board->pieces[i + color_to_move];
     }
     switch(pieceType) {
@@ -170,17 +199,7 @@ uint64_t getPieceAttackMap(Board* board, int pieceType, int square)
             // Add en passant
             attacks &= foes | (0x1UL << bgetenp(board->info));
 
-            passiveMoves = 0;
-            if (color_to_move == WHITE)
-                passiveMoves |= 0x1UL << (square + 8);
-            else
-                passiveMoves |= 0x1UL << (square - 8);
-            if (((square / 8) == 1) && (color_to_move == WHITE))
-                passiveMoves |= 0x1UL << (square + 16);
-            else if (((square / 8) == 6) && (color_to_move == BLACK))
-                passiveMoves |= 0x1UL << (square - 16);
             bitmap |= attacks ^ (attacks & friends);
-            bitmap |= passiveMoves ^ (passiveMoves & (friends | foes));
             break;
 
         case KNIGHT:
@@ -210,10 +229,9 @@ uint64_t getPieceAttackMap(Board* board, int pieceType, int square)
             break;
 
         case QUEEN:
-            attacks = magicLookupRook((friends | foes), square);
-            bitmap |= attacks ^ (attacks & friends);
-            attacks = magicLookupBishop((friends | foes), square);
-            bitmap |= attacks ^ (attacks & friends);
+            attacks  = magicLookupRook((friends | foes), square);
+            attacks |= magicLookupBishop((friends | foes), square);
+            bitmap  |= attacks ^ (attacks & friends);
             break;
 
         case KING:
@@ -248,7 +266,7 @@ uint64_t genAllAttackMap(Board* board, int color)
             square = bitScanForward(piece);
 
             // GET ATTACK BITMAP FOR CURRENT PIECE
-            bitmap |= getPieceAttackMap(board, pieceType, square);
+            bitmap |= genPieceAttackMap(board, pieceType, color, square);
 
             // Iterate to next piece
             pieces ^= piece;
@@ -285,7 +303,8 @@ int checkIfLegal(Board* board, Move* move)
             int square = bitScanForward(piece);
 
             // GET ATTACK BITMAP FOR CURRENT PIECE
-            all_attacks |= getPieceAttackMap(board, pieceType, square);
+            all_attacks |= 
+                genPieceAttackMap(board, pieceType, color_to_move, square);
 
             // Iterate to next piece
             pieces ^= piece;
@@ -321,7 +340,12 @@ int8_t genAllLegalMoves(Board *board, Move *moves)
             uint64_t dst;
 
             // GET ATTACK BITMAP FOR CURRENT PIECE
-            uint64_t bitmap = getPieceAttackMap(board, pieceType, square);
+            uint64_t bitmap =
+                genPieceAttackMap(board, pieceType, color_to_move, square);
+            if (pieceType == PAWN)
+                bitmap |= genPassivePawnMoves(board, color_to_move, square);
+            if (pieceType == KING)
+                bitmap |= genPassiveKingMoves(board, color_to_move, square);
 
             while ((dst = bitmap & -bitmap))
             {

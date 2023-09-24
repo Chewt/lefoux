@@ -153,10 +153,7 @@ void perftRun(Board* board, PerftInfo* pi, uint8_t depth)
 
             // Checks
             boardMove(board, movelist[i]);
-            printBoard(board);
-            printMove(movelist[i]);
             uint64_t attack_map = genAllAttackMap(board, enemyColor ^ BLACK);
-            printBitboard(attack_map);
             if (attack_map & board->pieces[enemyColor + KING])
                 pi->checks++;
             undoMove(board, movelist[i]);
