@@ -171,10 +171,7 @@ int tests()
               int, PAWN, printInt, intDiff);
     RUN_TEST("mgetcol macro check", 
              (mgetcol(_BLACK | (PAWN << 4) | (IE7 << 13) | (IE5 << 7))), 
-              int, BLACK, printInt, intDiff);
-    RUN_TEST("mgetcol + mgetpiece check", 
-             (mgetcol(_BLACK | (PAWN << 4) | (IE7 << 13) | (IE5 << 7))), 
-              int, _PAWN, printInt, intDiff);
+              int, _BLACK, printInt, intDiff);
     boardMove(&b, m);
     RUN_TEST("pawn e7e5 boardMove", b.pieces[_PAWN], uint64_t, 
              (RANK[6] ^ E7) | E5, printBitboard, xor64bit);
