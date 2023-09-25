@@ -13,7 +13,7 @@ static char *bad = "\e[31m";
 static char *clear = "\e[0m";
 static char *nameColor = "\e[33m";
 
-void printInt(int x) { printf("%d", x); }
+void printInt(int x) { fprintf(stderr, "%d\n", x); }
 
 int intDiff(int a, int b) { return a - b; }
 
@@ -120,11 +120,11 @@ int tests()
     { \
         fprintf(stderr, "Test %s%s%s %sfailed%s. Took %.6f seconds\n", \
                 nameColor, name, clear, bad, clear, t.time_taken); \
-        fprintf(stderr, "  Expected: %s\n", good); \
+        fprintf(stderr, "  Expected: %s", good); \
         resultFmt(expected); \
-        fprintf(stderr, "%s  Actual:   %s\n", clear, bad); \
+        fprintf(stderr, "%s  Actual:   %s", clear, bad); \
         resultFmt(resultVar); \
-        fprintf(stderr, "%s  Diff:   %s\n", clear, bad); \
+        fprintf(stderr, "%s  Diff:   %s", clear, bad); \
         resultFmt(resDiff); \
         fprintf(stderr, "%s\n", clear); \
         fail++; \
@@ -201,7 +201,7 @@ int tests()
               int, PAWN, printInt, intDiff, noFree);
     RUN_TEST("mgetcol macro check", 
              (mgetcol(_BLACK | (PAWN << 4) | (IE7 << 13) | (IE5 << 7))), 
-              int, BLACK, printInt, intDiff, noFree);
+              int, _BLACK, printInt, intDiff, noFree);
     boardMove(&b, m);
     RUN_TEST("pawn e7e5 boardMove", b.pieces[_PAWN], uint64_t, 
              (RANK[6] ^ E7) | E5, printBitboard, xor64bit, noFree);
