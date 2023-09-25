@@ -15,9 +15,9 @@
  *
  * | En passant  | Castling  | Color to play
  * +---------------------------------+
- * | 3 bits      | 4 bits    | 1 bit |
+ * | 4 bits      | 4 bits    | 1 bit |
  * +---------------------------------+
- * The first 5 bits are not used.
+ * The first 7 bits are NOT TO BE USED. 
  *
  * - En passant describes where an en passant play can happen if at all.
  * - Castling describes which castling options are still possible.
@@ -153,8 +153,8 @@ typedef enum {
 } enumIndexSquare;
 
 // Extract en passant from info
-#define bgetenp(x) ((uint8_t)(0x7 & (x >> 5)))
-#define bgetenpsquare(x) ((uint8_t)(bgetenp(x) + ((bgetcol(x)) ? 40 : 16)))
+#define bgetenp(x) ((uint8_t)(0xf & (x >> 5)))
+#define bgetenpsquare(x) ((uint8_t)(bgetenp(x) + ((bgetcol(x)) ? 16 : 40)))
 
 // Extract castling from info
 #define bgetcas(x) ((uint8_t)(0x0F & (x >> 1)))
@@ -172,7 +172,7 @@ typedef enum {
  * | Prev BoardInfo
  * | w/ taken piece | Source      | Destination | Piece   | Promote | Color
  * +-----------------------------------------------------------------------+
- * | 8 & 3 bits     | 6 bits      | 6 bits      | 3 bit   | 3 bit   | 1 bit |
+ * | 9 & 3 bits     | 6 bits      | 6 bits      | 3 bit   | 3 bit   | 1 bit |
  * +-----------------------------------------------------------------------+
  *
  * Post Weight generation:

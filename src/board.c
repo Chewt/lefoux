@@ -473,13 +473,19 @@ uint16_t boardMove(Board *board, Move move)
         board->info &= ~(0x1 << 1);
 
     /* Update en passant */
-    board->info &= ~(0x3f << 5);
+    board->info |= 0x8 << 5;
     if (mgetpiece(move) == PAWN)
     {
         if ((mgetsrcbb(move) & RANK[1]) && (mgetdstbb(move) & RANK[3]))
-            board->info |= ((mgetsrc(move) + 8) << 5);
+        {
+            board->info &= ~(0xf << 5);
+            board->info |= ((mgetsrc(move) % 8) << 5);
+        }
         else if ((mgetsrcbb(move) & RANK[6]) && (mgetdstbb(move) & RANK[4]))
-            board->info |= ((mgetsrc(move) - 8) << 5);
+        {
+            board->info &= ~(0xf << 5);
+            board->info |= ((mgetsrc(move) % 8) << 5);
+        }
     }
 
     return prev_info;

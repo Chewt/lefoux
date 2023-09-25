@@ -170,7 +170,7 @@ int tests()
     RUN_TEST("pawn e2e4 boardMove", b.pieces[PAWN], uint64_t, (RANK[1] ^ E2)|E4,
             printBitboard, xor64bit, noFree);
     RUN_TEST("pawn e2e4 board info", b.info, uint16_t,
-                    ((0x3f & IE3) << 5) | 0xf << 1 | 0x1, printBoardInfo, xorInt, noFree);
+                    ((0x7 & (IE3 % 8)) << 5) | 0xf << 1 | 0x1, printBoardInfo, xorInt, noFree);
     b = getDefaultBoard();
     b.pieces[KNIGHT] = 0UL;
     b.pieces[BISHOP] = 0UL;
@@ -206,7 +206,7 @@ int tests()
     RUN_TEST("pawn e7e5 boardMove", b.pieces[_PAWN], uint64_t, 
              (RANK[6] ^ E7) | E5, printBitboard, xor64bit, noFree);
     RUN_TEST("pawn e7e5 board info", b.info, uint16_t, 
-             ((0x3f & IE6) << 5) | 0xf << 1 | 0x0, printBoardInfo, xorInt, noFree);
+             ((0x7 & (IE6 % 8)) << 5) | 0xf << 1 | 0x0, printBoardInfo, xorInt, noFree);
     b = getDefaultBoard();
     b.info |= 0x1;
     b.pieces[_KNIGHT] = 0UL;
