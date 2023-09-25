@@ -134,9 +134,32 @@ void printBoardInfo(uint16_t info)
             (bgetcol(info) & 0x1) ? 'B' : 'W');
 }
 
-uint64_t genPassiveKingMoves(Board* board, int color, int square)
+uint64_t genPassiveKingMoves(Board* board, int color)
 {
-    return 0UL;
+    uint64_t passive_moves = 0;
+    uint64_t friends = 0;
+    uint64_t foes = 0;
+    int i;
+    for (i = 0; i < 6; ++i)
+    {
+        foes    |= board->pieces[i + (color ^ BLACK)];
+        friends |= board->pieces[i + color];
+    }
+    if (color == WHITE)
+    {
+        if ((bgetcas(board->info) & 0x8) && !((B1 | C1 | D1) & (friends | foes)))
+            passive_moves |= C1;
+        if ((bgetcas(board->info) & 0x4) && !((F1 | G1) & (friends | foes)))
+            passive_moves |= G1;
+    }
+    else
+    {
+        if ((bgetcas(board->info) & 0x2) && !((B8 | C8 | D8) & (friends | foes)))
+            passive_moves |= C8;
+        if ((bgetcas(board->info) & 0x1) && !((F8 | G8) & (friends | foes)))
+            passive_moves |= G8;
+    }
+    return passive_moves;
 }
 
 uint64_t genPassivePawnMoves(Board* board, int color, int square)
@@ -312,7 +335,36 @@ int checkIfLegal(Board* board, Move* move)
         }
     }
     int is_legal = 1;
-    if (all_attacks & board->pieces[(color_to_move ^ BLACK) + KING])
+    uint64_t castle_square = 0;
+    if (mgetpiece(*move) == KING)
+    {
+        if (bgetcol(board->info) == _WHITE)
+        {
+            if ((bgetcas(board->info) & 0x8) &&
+                    mgetdst(*move) == IC1)
+                castle_square |= D1;
+            else if ((bgetcas(board->info) & 0x4) &&
+                    mgetdst(*move) == IG1)
+                castle_square |= F1;
+        }
+        else if (bgetcol(board->info) == _BLACK)
+        {
+            if ((bgetcas(board->info) & 0x2) &&
+                    mgetdst(*move) == IC8)
+                castle_square |= D8;
+            else if ((bgetcas(board->info) & 0x1) &&
+                    mgetdst(*move) == IG8)
+                castle_square |= F8;
+        }
+    }
+
+    if (castle_square)
+    {
+        printBoard(board);
+        printMove(*move);
+    }
+
+    if (all_attacks & (board->pieces[(color_to_move ^ BLACK) + KING] | castle_square))
     {
         board->info = prev_info >> 3;
         is_legal = 0;
@@ -346,7 +398,7 @@ int8_t genAllLegalMoves(Board *board, Move *moves)
             if (pieceType == PAWN)
                 bitmap |= genPassivePawnMoves(board, color_to_move, square);
             if (pieceType == KING)
-                bitmap |= genPassiveKingMoves(board, color_to_move, square);
+                bitmap |= genPassiveKingMoves(board, color_to_move);
 
             while ((dst = bitmap & -bitmap))
             {
@@ -395,16 +447,16 @@ uint16_t boardMove(Board *board, Move move)
     prev_info = (prev_info << 3) | (enemy_piece & 0x7);
 
     /* Remove src piece */
-    board->pieces[mgetpiece(move) + mgetcol(move)] ^= mgetsrcbb(move);
+    board->pieces[mgetpiece(move) + (enemy_color ^ BLACK)] ^= mgetsrcbb(move);
 
     /* Add dst piece */
-    board->pieces[mgetpiece(move) + mgetcol(move)] ^= mgetdstbb(move);
+    board->pieces[mgetpiece(move) + (enemy_color ^ BLACK)] ^= mgetdstbb(move);
 
     /* Swap color */
     board->info ^= 0x1; 
 
     /* Update castling */
-    int src_color = mgetcol(move);
+    int src_color = (mgetcol(move)) ? BLACK : WHITE;
     if (mgetpiece(move) == KING)
     {
         if (src_color == WHITE)

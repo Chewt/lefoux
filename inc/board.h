@@ -220,7 +220,7 @@ typedef uint32_t Move;
 #define mgetprom(x)   ((uint8_t)(0x07 & ((x) >>  1)))
 
 // Extract color to play from move.
-#define mgetcol(x)    (((0x01 & (x)) ? BLACK : WHITE))
+#define mgetcol(x)    ((0x01 & (x)))
 
 extern const uint64_t RDIAG;
 extern const uint64_t LDIAG;
