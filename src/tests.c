@@ -260,6 +260,16 @@ int tests()
     RUN_TEST_FMT(fen_board.pieces[_QUEEN], uint64_t_res, printBitboard, b.pieces[_QUEEN]);
     RUN_TEST_FMT(fen_board.pieces[_KING], uint64_t_res, printBitboard, b.pieces[_KING]);
     */
+    loadFen(&b, "r3k2r/p1ppqpb1/bn2pnp1/3PN3/Pp2P3/2N2Q1p/1PPBBPPP/R3K2R b KQkq a3 0 1");
+    m = _BLACK | (PAWN << 4) | (IC7 << 13) | (IC5 << 7);
+    boardMove(&b, m);
+    RUN_TEST(" Black en passant ", b.info, uint16_t, ((IC6 << 5) | (0xF << 1)),
+             printBoardInfo, intDiff);
+    m = _WHITE | (PAWN << 4) | (IA4 << 13) | (IA5 << 7);
+    boardMove(&b, m);
+    undoMove(&b, m);
+    RUN_TEST(" Black en passant after undo ", b.info, uint16_t, ((IC6 << 5) | (0xF << 1)),
+             printBoardInfo, intDiff);
 
     /* Perft tests */
     fprintf(stderr, "Default board perft tests\n");
@@ -275,6 +285,7 @@ int tests()
     loadFen(&b, "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ");
     RUN_PERFT_TEST(&b, 1, ((PerftInfo){48, 8, 0, 2, 0, 0 ,0}));
     RUN_PERFT_TEST(&b, 2, ((PerftInfo){2039, 351, 1, 91, 0, 3 ,0}));
+    RUN_PERFT_TEST(&b, 3, ((PerftInfo){97862, 17102, 45, 3162, 0, 993 ,0}));
 
     fprintf(stderr, "Tests passed: %s%d%s of %d\n",
             good, pass, clear, pass + fail);
