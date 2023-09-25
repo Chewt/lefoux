@@ -153,7 +153,7 @@ void perftRun(Board* board, PerftInfo* pi, uint8_t depth)
             }
 
             // En passants
-            if ((mgetpiece(movelist[i]) == PAWN) && (mgetdst(movelist[i]) == bgetenp(board->info))) 
+            if ((mgetpiece(movelist[i]) == PAWN) && (mgetdst(movelist[i]) == bgetenpsquare(board->info))) 
             {
                 pi->enpassants++;
                 pi->captures++;

@@ -15,7 +15,7 @@
  *
  * | En passant  | Castling  | Color to play
  * +---------------------------------+
- * | 6 bits      | 4 bits    | 1 bit |
+ * | 3 bits      | 4 bits    | 1 bit |
  * +---------------------------------+
  * The first 5 bits are not used.
  *
@@ -153,7 +153,8 @@ typedef enum {
 } enumIndexSquare;
 
 // Extract en passant from info
-#define bgetenp(x) ((uint8_t)(0x3F & (x >> 5)))
+#define bgetenp(x) ((uint8_t)(0x7 & (x >> 5)))
+#define bgetenpsquare(x) ((uint8_t)(bgetenp(x) + ((bgetcol(x)) ? 40 : 16)))
 
 // Extract castling from info
 #define bgetcas(x) ((uint8_t)(0x0F & (x >> 1)))

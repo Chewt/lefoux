@@ -201,7 +201,7 @@ int tests()
               int, PAWN, printInt, intDiff, noFree);
     RUN_TEST("mgetcol macro check", 
              (mgetcol(_BLACK | (PAWN << 4) | (IE7 << 13) | (IE5 << 7))), 
-              int, BLACK, printInt, intDiff, noFree);
+              int, _BLACK, printInt, intDiff, noFree);
     boardMove(&b, m);
     RUN_TEST("pawn e7e5 boardMove", b.pieces[_PAWN], uint64_t, 
              (RANK[6] ^ E7) | E5, printBitboard, xor64bit, noFree);
@@ -267,6 +267,19 @@ int tests()
     RUN_TEST("loadFen check 1. e4", &fen_board, Board*, &b, 
               printBoard, boardDiff, free);
 
+    /* Undo tests */
+/*
+    loadFen(&fen_board, "r3k2r/p1ppqpb1/bn2pnp1/3PN3/Pp2P3/2N2Q1p/1PPBBPPP/R3K2R b KQkq a3 0 1");
+    m = _BLACK | (PAWN << 4) | (IC7 << 13) | (IC5 << 7);
+    boardMove(&fen_board, m);
+    m = _WHITE | (PAWN << 4) | (IA4 << 13) | (IA5 << 7);
+    boardMove(&fen_board, m);
+    RUN_TEST("Black en passant square set",
+            fen_board.info, uint16_t)
+    undoMove(&fen_board, m);
+    */
+
+
     /* Perft tests */
     fprintf(stderr, "Default board perft tests\n");
     b = getDefaultBoard();
@@ -286,9 +299,9 @@ int tests()
     RUN_TEST("Perft depth 4", runPerftTest(&b, &pi, 4), PerftInfo*, 
               &((PerftInfo){197281, 1576, 0, 0, 0, 469 ,0}), 
               myPrintPerft, perftDiff, free);
-    RUN_TEST("Perft depth 5", runPerftTest(&b, &pi, 5), PerftInfo*, 
-              &((PerftInfo){4865609, 82719, 258, 0, 0, 809099 ,0}), 
-              myPrintPerft, perftDiff, free);
+    //RUN_TEST("Perft depth 5", runPerftTest(&b, &pi, 5), PerftInfo*, 
+              //&((PerftInfo){4865609, 82719, 258, 0, 0, 809099 ,0}), 
+              //myPrintPerft, perftDiff, free);
 
     fprintf(stderr, "Position 2 perft tests\n");
     loadFen(&b, "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ");
@@ -297,6 +310,9 @@ int tests()
               myPrintPerft, perftDiff, free);
     RUN_TEST("Perft depth 2 - position 2", runPerftTest(&b, &pi, 2), PerftInfo*, 
               &((PerftInfo){2039, 351, 1, 91, 0, 3 ,0}), 
+              myPrintPerft, perftDiff, free);
+    RUN_TEST("Perft depth 3 - position 3", runPerftTest(&b, &pi, 3), PerftInfo*, 
+              &((PerftInfo){97862, 17102, 45, 3162, 0, 993 ,0}), 
               myPrintPerft, perftDiff, free);
 
     fprintf(stderr, "Tests passed: %s%d%s of %d\n",

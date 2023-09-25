@@ -126,7 +126,7 @@ void printBoardInfo(uint16_t info)
     printBytesBinary(2, info);
     printf("\n");
     printf("En passant: %c%c(%u)\nCastling: %c%c%c%c\nColor: %c\n",
-            bgetenp(info) % 8 + 'A', bgetenp(info) / 8 + '1', bgetenp(info),
+            bgetenpsquare(info) % 8 + 'A', bgetenpsquare(info) / 8 + '1', bgetenpsquare(info),
             (bgetcas(info) & 0x8) ? 'Q' : '-',
             (bgetcas(info) & 0x4) ? 'K' : '-',
             (bgetcas(info) & 0x2) ? 'q' : '-',
@@ -221,7 +221,7 @@ uint64_t genPieceAttackMap(Board* board, int pieceType, int color, int square)
                 attacks &= ~(AFILE);
 
             // Add en passant
-            attacks &= foes | (0x1UL << bgetenp(board->info));
+            attacks &= foes | (0x1UL << bgetenpsquare(board->info));
 
             bitmap |= attacks ^ (attacks & friends);
             break;
@@ -430,7 +430,7 @@ uint16_t boardMove(Board *board, Move move)
     int i;
     int enemy_color = (bgetcol(board->info) == _BLACK) ? WHITE : BLACK;
     uint64_t enemy_piece_dstbb = mgetdstbb(move);
-    if ((mgetpiece(move) == PAWN) && (mgetdst(move) == bgetenp(board->info))) 
+    if ((mgetpiece(move) == PAWN) && (mgetdst(move) == bgetenpsquare(board->info))) 
     {
         if (enemy_color == BLACK)
             enemy_piece_dstbb >>= 8;
