@@ -203,8 +203,8 @@ void perftRun(Board* board, PerftInfo* pi, uint8_t depth)
 
 void printPerft(PerftInfo pi)
 {
-    printf("Nodes: %lu\nCaptures: %lu\nEn Passants: %lu\nCastles: %lu\nChecks: "
-           "%lu\nCheckmates: %lu\n",
+    printf("\nNodes: %ld\nCaptures: %ld\nEn Passants: %ld\nCastles: %ld\nChecks: "
+           "%ld\nCheckmates: %ld\n",
            pi.nodes, pi.captures, pi.enpassants, pi.castles, pi.checks,
            pi.checkmates);
 }

@@ -13,7 +13,7 @@ static char *bad = "\e[31m";
 static char *clear = "\e[0m";
 static char *nameColor = "\e[33m";
 
-void printInt(int x) { printf("%d", x); }
+void printInt(int x) { fprintf(stderr, "%d\n", x); }
 
 int intDiff(int a, int b) { return a - b; }
 
@@ -120,11 +120,11 @@ int tests()
     { \
         fprintf(stderr, "Test %s%s%s %sfailed%s. Took %.6f seconds\n", \
                 nameColor, name, clear, bad, clear, t.time_taken); \
-        fprintf(stderr, "  Expected: %s\n", good); \
+        fprintf(stderr, "  Expected: %s", good); \
         resultFmt(expected); \
-        fprintf(stderr, "%s  Actual:   %s\n", clear, bad); \
+        fprintf(stderr, "%s  Actual:   %s", clear, bad); \
         resultFmt(resultVar); \
-        fprintf(stderr, "%s  Diff:   %s\n", clear, bad); \
+        fprintf(stderr, "%s  Diff:   %s", clear, bad); \
         resultFmt(resDiff); \
         fprintf(stderr, "%s\n", clear); \
         fail++; \
