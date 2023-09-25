@@ -140,6 +140,11 @@ void perftRun(Board* board, PerftInfo* pi, uint8_t depth)
             enemyPieces |= board->pieces[enemyColor + i];
         for (i = 0; i < n_moves; ++i) 
         {
+            if ((mgetpiece(movelist[i]) == PAWN) && (mgetsrc(movelist[i]) == ID5))
+            {
+                //printBoard(board);
+                //printMove(movelist[i]);
+            }
 
             // Captures
             if (mgetdstbb(movelist[i]) & enemyPieces)
@@ -148,8 +153,8 @@ void perftRun(Board* board, PerftInfo* pi, uint8_t depth)
             }
 
             // En passants
-            if (mgetpiece(movelist[i]) == PAWN &&
-                (mgetdst(movelist[i]) == bgetenp(board->info))) {
+            if ((mgetpiece(movelist[i]) == PAWN) && (mgetdst(movelist[i]) == bgetenp(board->info))) 
+            {
                 pi->enpassants++;
                 pi->captures++;
             }

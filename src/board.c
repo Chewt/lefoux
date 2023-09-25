@@ -305,7 +305,8 @@ void undoMove(Board* board, Move move)
     // Restore boardinfo
     board->info = move >> 22;
     int move_color = (mgetcol(move)) ? BLACK : WHITE;
-    // Get undo move
+
+    // Undo move
     board->pieces[move_color + mgetpiece(move)] ^= (mgetsrcbb(move) 
                                                   | mgetdstbb(move));
     // restore taken piece
@@ -338,30 +339,20 @@ int checkIfLegal(Board* board, Move* move)
     uint64_t castle_square = 0;
     if (mgetpiece(*move) == KING)
     {
-        if (bgetcol(board->info) == _WHITE)
+        if (mgetcol(*move) == _WHITE)
         {
-            if ((bgetcas(board->info) & 0x8) &&
-                    mgetdst(*move) == IC1)
+            if ((bgetcas(board->info) & 0x8) && (mgetdst(*move) == IC1))
                 castle_square |= D1;
-            else if ((bgetcas(board->info) & 0x4) &&
-                    mgetdst(*move) == IG1)
+            else if ((bgetcas(board->info) & 0x4) && (mgetdst(*move) == IG1))
                 castle_square |= F1;
         }
-        else if (bgetcol(board->info) == _BLACK)
+        else if (mgetcol(*move) == _BLACK)
         {
-            if ((bgetcas(board->info) & 0x2) &&
-                    mgetdst(*move) == IC8)
+            if ((bgetcas(*move >> 22) & 0x2) && (mgetdst(*move) == IC8))
                 castle_square |= D8;
-            else if ((bgetcas(board->info) & 0x1) &&
-                    mgetdst(*move) == IG8)
+            else if ((bgetcas(*move >> 22) & 0x1) && (mgetdst(*move) == IG8))
                 castle_square |= F8;
         }
-    }
-
-    if (castle_square)
-    {
-        printBoard(board);
-        printMove(*move);
     }
 
     if (all_attacks & (board->pieces[(color_to_move ^ BLACK) + KING] | castle_square))
@@ -438,11 +429,19 @@ uint16_t boardMove(Board *board, Move move)
     uint16_t prev_info = board->info;
     int i;
     int enemy_color = (bgetcol(board->info) == _BLACK) ? WHITE : BLACK;
+    uint64_t enemy_piece_dstbb = mgetdstbb(move);
+    if ((mgetpiece(move) == PAWN) && (mgetdst(move) == bgetenp(board->info))) 
+    {
+        if (enemy_color == BLACK)
+            enemy_piece_dstbb >>= 8;
+        else
+            enemy_piece_dstbb <<= 8;
+    }
     for (i = 0; i < 6; ++i)
     {
-        if (board->pieces[i + enemy_color] & mgetdstbb(move))
+        if (board->pieces[i + enemy_color] & enemy_piece_dstbb)
             enemy_piece = i;
-        board->pieces[i + enemy_color] &= ~mgetdstbb(move);
+        board->pieces[i + enemy_color] &= ~enemy_piece_dstbb;
     }
     prev_info = (prev_info << 3) | (enemy_piece & 0x7);
 
@@ -630,8 +629,10 @@ void printMove(Move move)
             printf("King\n");
             break;
     }
-    printf("Source: %c%c\n", mgetsrc(move) % 8 + 'A', mgetsrc(move) / 8 + '1');
-    printf("Destination: %c%c\n", mgetdst(move) % 8 + 'A', mgetdst(move) / 8 + '1');
+    printf("Source: %c%c(%d)\n", mgetsrc(move) % 8 + 'A',
+           mgetsrc(move) / 8 + '1', mgetsrc(move));
+    printf("Destination: %c%c(%d)\n", mgetdst(move) % 8 + 'A',
+           mgetdst(move) / 8 + '1', mgetdst(move));
     printf("Weight: %d\n", mgetweight(move));
 }
 
