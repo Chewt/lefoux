@@ -132,35 +132,6 @@ int tests()
     } \
     } \
 }
-#define RUN_PERFT_TEST( b, depth, expected ) { \
-    PerftInfo pi = { 0 }; \
-    StartTimer(&t); \
-    perftRun(b, &pi, depth); \
-    StopTimer(&t); \
-    if (      (pi.nodes == expected.nodes) \
-            && (pi.captures == expected.captures) \
-            && (pi.enpassants == expected.enpassants) \
-            && (pi.checks == expected.checks) \
-            && (pi.checkmates == expected.checkmates) \
-            && (pi.castles == expected.castles) \
-            && (pi.promotions == expected.promotions)) \
-    { \
-        fprintf(stderr, "Test %sPerft depth %d%s %spassed%s. Took %.6f seconds\n", \
-                nameColor, depth, clear, good, clear, t.time_taken);  \
-        pass++; \
-    } \
-    else \
-    { \
-        fprintf(stderr, "Test %sPerft depth %d%s %sfailed%s. Took %.6f seconds\n", \
-                nameColor, depth, clear, bad, clear, t.time_taken);  \
-        fprintf(stderr, "  Expected: %s\n", good); \
-        printPerft(expected); \
-        fprintf(stderr, "%s  Actual:   %s\n", clear, bad); \
-        printPerft(pi); \
-        fprintf(stderr, "%s\n", clear); \
-        fail++; \
-    } \
-}
 
     fprintf(stderr, "Bithelpers\n");
     RUN_TEST( "bitScanForward", bitScanForward(  0xF00  ), int, 8, printInt, 
@@ -284,7 +255,6 @@ int tests()
               (genAllLegalMoves(&b, allMoves)), int, 22, printInt, intDiff , noFree);
 
     /* FEN tests */
-/*
     fprintf(stderr, "FEN Tests\n");
     b = getDefaultBoard();
     Board fen_board;
