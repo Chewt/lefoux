@@ -21,7 +21,7 @@ autothreads:
 	$(MAKE) XFLAGS="-DNUM_THREADS=$$CPUCORES";
 
 .PHONY: debug
-debug: CFLAGS += -g -DDEBUG -Wall -Wextra -Wno-unused-parameter
+debug: CFLAGS += -g -DDEBUG -Wall -Wextra -Wno-unused-parameter -Wno-int-to-pointer-cast
 debug: clean all
 debug: $(TARGET)
 
