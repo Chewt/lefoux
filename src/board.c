@@ -125,8 +125,12 @@ void printBoardInfo(uint16_t info)
     printf("raw info: 0x%04x, ", info);
     printBytesBinary(2, info);
     printf("\n");
-    printf("En passant: %c%c(%u)\nCastling: %c%c%c%c\nColor: %c\n",
-            bgetenpsquare(info) % 8 + 'A', bgetenpsquare(info) / 8 + '1', bgetenpsquare(info),
+    char enpStr[2][5] = {
+        "None",
+        {bgetenpsquare(info) % 8 + 'A', bgetenpsquare(info) / 8 + '1', '\0','\0','\0'}
+    };
+    printf("En passant: %s(%u)\nCastling: %c%c%c%c\nColor: %c\n",
+            bgetenp(info) & 8 ? enpStr[1] : enpStr[0], bgetenpsquare(info),
             (bgetcas(info) & 0x8) ? 'Q' : '-',
             (bgetcas(info) & 0x4) ? 'K' : '-',
             (bgetcas(info) & 0x2) ? 'q' : '-',
@@ -221,7 +225,8 @@ uint64_t genPieceAttackMap(Board* board, int pieceType, int color, int square)
                 attacks &= ~(AFILE);
 
             // Add en passant
-            attacks &= foes | (0x1UL << bgetenpsquare(board->info));
+            attacks &= foes | (bgetenp(board->info) & 8 ?
+                              0x1UL << bgetenpsquare(board->info) : 0);
 
             bitmap |= attacks ^ (attacks & friends);
             break;
@@ -297,7 +302,7 @@ uint64_t genAllAttackMap(Board* board, int color)
         }
     }
     return bitmap;
-    
+
 }
 
 void undoMove(Board* board, Move move)
@@ -307,7 +312,7 @@ void undoMove(Board* board, Move move)
     int move_color = (mgetcol(move)) ? BLACK : WHITE;
 
     // Undo move
-    board->pieces[move_color + mgetpiece(move)] ^= (mgetsrcbb(move) 
+    board->pieces[move_color + mgetpiece(move)] ^= (mgetsrcbb(move)
                                                   | mgetdstbb(move));
     // restore taken piece
     if (((move >> 19) & 0x7) != 0x7)
@@ -319,6 +324,7 @@ int checkIfLegal(Board* board, Move* move)
     uint16_t prev_info = boardMove(board, *move);
     *move |= prev_info << 19;
     int color_to_move = (bgetcol(board->info)) ? BLACK : WHITE;
+    // Generate bitmap of all attacks from the opposite color
     uint64_t all_attacks = 0UL;
     for (int pieceType = 0; pieceType < 6; ++pieceType)
     {
@@ -328,7 +334,7 @@ int checkIfLegal(Board* board, Move* move)
             int square = bitScanForward(piece);
 
             // GET ATTACK BITMAP FOR CURRENT PIECE
-            all_attacks |= 
+            all_attacks |=
                 genPieceAttackMap(board, pieceType, color_to_move, square);
 
             // Iterate to next piece
@@ -336,6 +342,8 @@ int checkIfLegal(Board* board, Move* move)
         }
     }
     int is_legal = 1;
+    // Check if the move was a castle move, if so add square to check against
+    // attack bitmap
     uint64_t castle_square = 0;
     if (mgetpiece(*move) == KING)
     {
@@ -355,6 +363,8 @@ int checkIfLegal(Board* board, Move* move)
         }
     }
 
+    // If king is under attack or the castle square was under attack, move was not
+    // legal
     if (all_attacks & (board->pieces[(color_to_move ^ BLACK) + KING] | castle_square))
     {
         board->info = prev_info >> 3;
@@ -393,17 +403,19 @@ int8_t genAllLegalMoves(Board *board, Move *moves)
 
             while ((dst = bitmap & -bitmap))
             {
-                moves[movecount++] = (square << 13) 
+                moves[movecount++] = (square << 13)
                     | (bitScanForward(dst) << 7)
                     | (pieceType << 4)
                     | bgetcol(board->info);
+
+                // printMove(moves[movecount - 1]);
 
                 // Check if move is legal, if not decrement movecount
                 if (!checkIfLegal(board, (moves + movecount - 1)))
                 {
                     movecount--;
                 }
-                
+
                 // Iterate to next move
                 bitmap ^= dst;
             }
@@ -430,7 +442,7 @@ uint16_t boardMove(Board *board, Move move)
     int i;
     int enemy_color = (bgetcol(board->info) == _BLACK) ? WHITE : BLACK;
     uint64_t enemy_piece_dstbb = mgetdstbb(move);
-    if ((mgetpiece(move) == PAWN) && (mgetdst(move) == bgetenpsquare(board->info))) 
+    if ((mgetpiece(move) == PAWN) && (mgetdst(move) == bgetenpsquare(board->info)))
     {
         if (enemy_color == BLACK)
             enemy_piece_dstbb >>= 8;
@@ -452,7 +464,7 @@ uint16_t boardMove(Board *board, Move move)
     board->pieces[mgetpiece(move) + (enemy_color ^ BLACK)] ^= mgetdstbb(move);
 
     /* Swap color */
-    board->info ^= 0x1; 
+    board->info ^= 0x1;
 
     /* Update castling */
     int src_color = (mgetcol(move)) ? BLACK : WHITE;
@@ -473,17 +485,20 @@ uint16_t boardMove(Board *board, Move move)
         board->info &= ~(0x1 << 1);
 
     /* Update en passant */
-    board->info |= 0x8 << 5;
+    // Unset any enpessant info that was there before
+    board->info &= ~(0xf << 5);
     if (mgetpiece(move) == PAWN)
     {
+        // If move was a pawn moving two spaces, set the file that the en
+        // pessant move is on
         if ((mgetsrcbb(move) & RANK[1]) && (mgetdstbb(move) & RANK[3]))
         {
-            board->info &= ~(0xf << 5);
+            board->info |= 0x8 << 5;
             board->info |= ((mgetsrc(move) % 8) << 5);
         }
         else if ((mgetsrcbb(move) & RANK[6]) && (mgetdstbb(move) & RANK[4]))
         {
-            board->info &= ~(0xf << 5);
+            board->info |= 0x8 << 5;
             board->info |= ((mgetsrc(move) % 8) << 5);
         }
     }
@@ -511,7 +526,7 @@ Board getDefaultBoard()
     return b;
 }
 
-void printBoard(Board *board) 
+void printBoard(Board *board)
 {
     printBoardInfo(board->info);
     for (int rank=7; rank >= 0; rank--)
@@ -524,7 +539,7 @@ void printBoard(Board *board)
             int pieceType;
             for (pieceType=0; pieceType<12; pieceType++)
                 if (board->pieces[pieceType] & square) break;
-            switch (pieceType) 
+            switch (pieceType)
             {
                 case PAWN + WHITE:
                     printf("P ");
@@ -580,7 +595,7 @@ void printMove(Move move)
     printf("Color: ");
     if (mgetcol(move)) printf("Black\n"); else printf("White\n");
     printf("Piece: ");
-    switch (mgetpiece(move)) 
+    switch (mgetpiece(move))
     {
         case PAWN:
         case _PAWN:
@@ -608,7 +623,7 @@ void printMove(Move move)
             break;
     }
     printf("Promotion: ");
-    switch (mgetprom(move)) 
+    switch (mgetprom(move))
     {
         case PAWN:
         case _PAWN:
@@ -669,15 +684,15 @@ void loadFen(Board* board, char* fen)
             board->pieces[BLACK + KING] |= 0x1ULL << (rank * 8 + file++);
         else if (curr_char == 'P')
             board->pieces[WHITE + PAWN] |= 0x1ULL << (rank * 8 + file++);
-        else if (curr_char == 'B')   
+        else if (curr_char == 'B')
             board->pieces[WHITE + BISHOP] |= 0x1ULL << (rank * 8 + file++);
-        else if (curr_char == 'N')   
+        else if (curr_char == 'N')
             board->pieces[WHITE + KNIGHT] |= 0x1ULL << (rank * 8 + file++);
-        else if (curr_char == 'R')   
+        else if (curr_char == 'R')
             board->pieces[WHITE + ROOK] |= 0x1ULL << (rank * 8 + file++);
-        else if (curr_char == 'Q')   
+        else if (curr_char == 'Q')
             board->pieces[WHITE + QUEEN] |= 0x1ULL << (rank * 8 + file++);
-        else if (curr_char == 'K')   
+        else if (curr_char == 'K')
             board->pieces[WHITE + KING] |= 0x1ULL << (rank * 8 + file++);
         else if (curr_char <= '9' && curr_char >= '0')
             file += curr_char - '0';
@@ -718,5 +733,5 @@ void loadFen(Board* board, char* fen)
     if (!strcmp(token, "-"))
         board->info |= 0x0UL << 5;
     else
-        board->info |= (((token[0] - 'a') + ((token[1]) - '1') * 8)) << 5;
+        board->info |= (((token[0] - 'a') | 8)) << 5;
 }

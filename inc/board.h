@@ -17,9 +17,11 @@
  * +---------------------------------+
  * | 4 bits      | 4 bits    | 1 bit |
  * +---------------------------------+
- * The first 7 bits are NOT TO BE USED. 
+ * The first 7 bits are NOT TO BE USED.
  *
  * - En passant describes where an en passant play can happen if at all.
+ *   msb is set when en pessant is possible, lower three bits indicate the
+ *   file that en pessant is possible, rank can be computed by color to move
  * - Castling describes which castling options are still possible.
  *   0 0 0 0 <- lsb
  *   ^ ^ ^ ^
@@ -29,9 +31,9 @@
  *   | white kingside
  *   white queenside
  * - Color to play describes whether it is black or white to play.
- * - The square a1 is bitboard & 1, b1 is bitboard & 2, ...,
- *   a2 is bitboard & 0x0100, b2 is bitboard & 0x0200, ..., g8 is
- *   bitboard & 0x4000000000000000, h8 is bitboard & 0x8000000000000000
+ * - Square enums below describe squares in two ways such as A2 and IA2. A2 is
+ *   the bitboard with just A2 masked, while IA2 is the index of the square A2.
+ *   As such, A2 = 1 << IA2.
  *****************************************************************************/
 typedef struct
 {
@@ -73,70 +75,21 @@ typedef enum {
  * @brief enum for piece squares
  */
 typedef enum {
-    A1=0x1,
-    B1=0x2,
-    C1=0x4,
-    D1=0x8,
-    E1=0x10,
-    F1=0x20,
-    G1=0x40,
-    H1=0x80,
-    A2=0x100,
-    B2=0x200,
-    C2=0x400,
-    D2=0x800,
-    E2=0x1000,
-    F2=0x2000,
-    G2=0x4000,
-    H2=0x8000,
-    A3=0x10000,
-    B3=0x20000,
-    C3=0x40000,
-    D3=0x80000,
-    E3=0x100000,
-    F3=0x200000,
-    G3=0x400000,
-    H3=0x800000,
-    A4=0x1000000,
-    B4=0x2000000,
-    C4=0x4000000,
-    D4=0x8000000,
-    E4=0x10000000,
-    F4=0x20000000,
-    G4=0x40000000,
-    H4=0x80000000,
-    A5=0x100000000,
-    B5=0x200000000,
-    C5=0x400000000,
-    D5=0x800000000,
-    E5=0x1000000000,
-    F5=0x2000000000,
-    G5=0x4000000000,
-    H5=0x8000000000,
-    A6=0x10000000000,
-    B6=0x20000000000,
-    C6=0x40000000000,
-    D6=0x80000000000,
-    E6=0x100000000000,
-    F6=0x200000000000,
-    G6=0x400000000000,
-    H6=0x800000000000,
-    A7=0x1000000000000,
-    B7=0x2000000000000,
-    C7=0x4000000000000,
-    D7=0x8000000000000,
-    E7=0x10000000000000,
-    F7=0x20000000000000,
-    G7=0x40000000000000,
-    H7=0x80000000000000,
-    A8=0x100000000000000,
-    B8=0x200000000000000,
-    C8=0x400000000000000,
-    D8=0x800000000000000,
-    E8=0x1000000000000000,
-    F8=0x2000000000000000,
-    G8=0x4000000000000000,
-    H8=0x8000000000000000,
+    A1=0x1, B1=0x2, C1=0x4, D1=0x8, E1=0x10, F1=0x20, G1=0x40, H1=0x80,
+    A2=0x100, B2=0x200, C2=0x400, D2=0x800, E2=0x1000, F2=0x2000, G2=0x4000,
+    H2=0x8000, A3=0x10000, B3=0x20000, C3=0x40000, D3=0x80000, E3=0x100000,
+    F3=0x200000, G3=0x400000, H3=0x800000, A4=0x1000000, B4=0x2000000,
+    C4=0x4000000, D4=0x8000000, E4=0x10000000, F4=0x20000000, G4=0x40000000,
+    H4=0x80000000, A5=0x100000000, B5=0x200000000, C5=0x400000000,
+    D5=0x800000000, E5=0x1000000000, F5=0x2000000000, G5=0x4000000000,
+    H5=0x8000000000, A6=0x10000000000, B6=0x20000000000, C6=0x40000000000,
+    D6=0x80000000000, E6=0x100000000000, F6=0x200000000000, G6=0x400000000000,
+    H6=0x800000000000, A7=0x1000000000000, B7=0x2000000000000,
+    C7=0x4000000000000, D7=0x8000000000000, E7=0x10000000000000,
+    F7=0x20000000000000, G7=0x40000000000000, H7=0x80000000000000,
+    A8=0x100000000000000, B8=0x200000000000000, C8=0x400000000000000,
+    D8=0x800000000000000, E8=0x1000000000000000, F8=0x2000000000000000,
+    G8=0x4000000000000000, H8=0x8000000000000000,
 } enumSquare;
 /*
  * @brief enum for piece squares in index form
@@ -154,7 +107,7 @@ typedef enum {
 
 // Extract en passant from info
 #define bgetenp(x) ((uint8_t)(0xf & (x >> 5)))
-#define bgetenpsquare(x) ((uint8_t)(bgetenp(x) + ((bgetcol(x)) ? 16 : 40)))
+#define bgetenpsquare(x) ((uint8_t)((bgetenp(x) & 0x7) + ((bgetcol(x)) ? 16 : 40)))
 
 // Extract castling from info
 #define bgetcas(x) ((uint8_t)(0x0F & (x >> 1)))
@@ -185,8 +138,10 @@ typedef enum {
  * The first 5 bits are not used.
  *
  * - Weight is the calculated strength of the move.
- * - Source is the source location of the piece that will move
- * - Destination is the destination of the piece that will move
+ * - Source is the source location of the piece that will move. Lower three
+ *   bits are file, upper 3 rank
+ * - Destination is the destination of the piece that will move. Lower three
+ *   bits are file, upper 3 rank
  * - Piece is the type of piece that is moving
  * - Color is the color of the piece that is moving
  * - Promote is the piece that a pawn will promote to
