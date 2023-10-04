@@ -209,7 +209,7 @@ int tests()
     RUN_TEST("pawn e7e5 board info", b.info, uint16_t,
              (((0x7 & (IE6 % 8)) | 8) << 5) | 0xf << 1 | 0x0, printBoardInfo, xorInt, noFree);
     b = getDefaultBoard();
-    b.info |= 0x1;
+    b.info |= _BLACK;
     b.pieces[_KNIGHT] = 0UL;
     b.pieces[_BISHOP] = 0UL;
     m = _BLACK | (ROOK << 4) | (IA8 << 13) | (IB8 << 7);
@@ -217,21 +217,89 @@ int tests()
     RUN_TEST("queenside black rook affect castling", b.info, uint16_t,
             (0xd << 1) | _WHITE, printBoardInfo, xorInt, noFree);
     b = getDefaultBoard();
-    b.info |= 0x1;
+    b.info |= _BLACK;
     b.pieces[_KNIGHT] = 0UL;
     b.pieces[_BISHOP] = 0UL;
     m = _BLACK | (ROOK << 4) | (IH8 << 13) | (IG8 << 7);
     boardMove(&b, m);
-    RUN_TEST("kingside rook affect castling", b.info, uint16_t,
+    RUN_TEST("kingside black rook affect castling", b.info, uint16_t,
             (0xe << 1) | _WHITE, printBoardInfo, xorInt, noFree);
     b = getDefaultBoard();
-    b.info |= 0x1;
+    b.info |= _BLACK;
     b.pieces[_KNIGHT] = 0UL;
     b.pieces[_BISHOP] = 0UL;
     m = _BLACK | (KING << 4) | (IE8 << 13) | (IF8 << 7);
     boardMove(&b, m);
-    RUN_TEST("white king affect castling", b.info, uint16_t,
+    RUN_TEST("black king affect castling", b.info, uint16_t,
             (0xc << 1) | _WHITE, printBoardInfo, xorInt, noFree);
+
+    b = getDefaultBoard();
+    b.info |= _WHITE;
+    b.pieces[KNIGHT] = 0UL;
+    b.pieces[BISHOP] = 0UL;
+    m = _WHITE | (KING << 4) | (IE1 << 13) | (IG1 << 7);
+    boardMove(&b, m);
+    Board target = getDefaultBoard();
+    target.info |= _BLACK;
+    target.info &= ~0x18;
+    target.pieces[KNIGHT] = 0UL;
+    target.pieces[BISHOP] = 0UL;
+    target.pieces[KING] = G1;
+    target.pieces[ROOK] = A1 | F1;
+    RUN_TEST("Castling white kingside", &b, Board*,
+            &target, printBoard, boardDiff, free);
+
+    b = getDefaultBoard();
+    b.info |= _WHITE;
+    b.pieces[KNIGHT] = 0UL;
+    b.pieces[BISHOP] = 0UL;
+    b.pieces[QUEEN] = 0UL;
+    m = _WHITE | (KING << 4) | (IE1 << 13) | (IC1 << 7);
+    boardMove(&b, m);
+    target = getDefaultBoard();
+    target.info |= _BLACK;
+    target.info &= ~0x18;
+    target.pieces[KNIGHT] = 0UL;
+    target.pieces[BISHOP] = 0UL;
+    target.pieces[QUEEN] = 0UL;
+    target.pieces[KING] = C1;
+    target.pieces[ROOK] = D1 | H1;
+    RUN_TEST("Castling white queenside", &b, Board*,
+            &target, printBoard, boardDiff, free);
+
+    b = getDefaultBoard();
+    b.info |= _BLACK;
+    b.pieces[_KNIGHT] = 0UL;
+    b.pieces[_BISHOP] = 0UL;
+    m = _BLACK | (KING << 4) | (IE8 << 13) | (IG8 << 7);
+    boardMove(&b, m);
+    target = getDefaultBoard();
+    target.info |= _WHITE;
+    target.info &= ~0x6;
+    target.pieces[_KNIGHT] = 0UL;
+    target.pieces[_BISHOP] = 0UL;
+    target.pieces[_KING] = G8;
+    target.pieces[_ROOK] = A8 | F8;
+    RUN_TEST("Castling black kingside", &b, Board*,
+            &target, printBoard, boardDiff, free);
+
+    b = getDefaultBoard();
+    b.info |= _BLACK;
+    b.pieces[_KNIGHT] = 0UL;
+    b.pieces[_BISHOP] = 0UL;
+    b.pieces[_QUEEN] = 0UL;
+    m = _BLACK | (KING << 4) | (IE8 << 13) | (IC8 << 7);
+    boardMove(&b, m);
+    target = getDefaultBoard();
+    target.info |= _WHITE;
+    target.info &= ~0x6;
+    target.pieces[_KNIGHT] = 0UL;
+    target.pieces[_BISHOP] = 0UL;
+    target.pieces[_QUEEN] = 0UL;
+    target.pieces[_KING] = C8;
+    target.pieces[_ROOK] = D8 | H8;
+    RUN_TEST("Castling black queenside", &b, Board*,
+            &target, printBoard, boardDiff, free);
 
     // Test cases for genAllLegalMoves
     fprintf(stderr, " -- genAllLegalMoves() -- \n");
@@ -281,7 +349,6 @@ int tests()
     undoMove(&fen_board, m);
     */
 
-
     /* Perft tests */
     fprintf(stderr, " -- Default board perft tests -- \n");
     b = getDefaultBoard();
@@ -313,7 +380,7 @@ int tests()
     RUN_TEST("Perft depth 2 - position 2", runPerftTest(&b, &pi, 2), PerftInfo*,
               &((PerftInfo){2039, 351, 1, 91, 0, 3 ,0}),
               myPrintPerft, perftDiff, free);
-    RUN_TEST("Perft depth 3 - position 3", runPerftTest(&b, &pi, 3), PerftInfo*,
+    RUN_TEST("Perft depth 3 - position 2", runPerftTest(&b, &pi, 3), PerftInfo*,
               &((PerftInfo){97862, 17102, 45, 3162, 0, 993 ,0}),
               myPrintPerft, perftDiff, free);
 

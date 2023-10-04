@@ -224,10 +224,6 @@ uint64_t genPieceAttackMap(Board* board, int pieceType, int color, int square)
             if (file == 7)
                 attacks &= ~(AFILE);
 
-            // Add en passant
-            attacks &= foes | (bgetenp(board->info) & 8 ?
-                              0x1UL << bgetenpsquare(board->info) : 0);
-
             bitmap |= attacks ^ (attacks & friends);
             break;
 
@@ -314,6 +310,20 @@ void undoMove(Board* board, Move move)
     // Undo move
     board->pieces[move_color + mgetpiece(move)] ^= (mgetsrcbb(move)
                                                   | mgetdstbb(move));
+    /* Move rooks when castling */
+    /* White Kingside */
+    if ((mgetpiece(move) == KING) && (mgetsrc(move) == IE1) && (mgetdst(move) == IG1))
+        board->pieces[ROOK + WHITE] ^= H1 | F1;
+    /* White Queenside */
+    else if ((mgetpiece(move) == KING) && (mgetsrc(move) == IE1) && (mgetdst(move) == IC1))
+        board->pieces[ROOK + WHITE] ^= A1 | D1;
+    /* Black Kingside */
+    else if ((mgetpiece(move) == KING) && (mgetsrc(move) == IE8) && (mgetdst(move) == IG8))
+        board->pieces[ROOK + BLACK] ^= H8 | F8;
+    /* Black Queenside */
+    else if ((mgetpiece(move) == KING) && (mgetsrc(move) == IE8) && (mgetdst(move) == IC8))
+        board->pieces[ROOK + BLACK] ^= A8 | D8;
+
     // restore taken piece
     if (((move >> 19) & 0x7) != 0x7)
         board->pieces[(move_color^BLACK) + ((move>>19)&0x7)] ^= mgetdstbb(move);
@@ -323,6 +333,7 @@ int checkIfLegal(Board* board, Move* move)
 {
     uint16_t prev_info = boardMove(board, *move);
     *move |= prev_info << 19;
+    prev_info >>= 3;
     int color_to_move = (bgetcol(board->info)) ? BLACK : WHITE;
     // Generate bitmap of all attacks from the opposite color
     uint64_t all_attacks = 0UL;
@@ -349,16 +360,16 @@ int checkIfLegal(Board* board, Move* move)
     {
         if (mgetcol(*move) == _WHITE)
         {
-            if ((bgetcas(board->info) & 0x8) && (mgetdst(*move) == IC1))
+            if ((bgetcas(prev_info) & 0x8) && (mgetdst(*move) == IC1))
                 castle_square |= D1;
-            else if ((bgetcas(board->info) & 0x4) && (mgetdst(*move) == IG1))
+            else if ((bgetcas(prev_info) & 0x4) && (mgetdst(*move) == IG1))
                 castle_square |= F1;
         }
         else if (mgetcol(*move) == _BLACK)
         {
-            if ((bgetcas(*move >> 22) & 0x2) && (mgetdst(*move) == IC8))
+            if ((bgetcas(prev_info) & 0x2) && (mgetdst(*move) == IC8))
                 castle_square |= D8;
-            else if ((bgetcas(*move >> 22) & 0x1) && (mgetdst(*move) == IG8))
+            else if ((bgetcas(prev_info) & 0x1) && (mgetdst(*move) == IG8))
                 castle_square |= F8;
         }
     }
@@ -366,10 +377,7 @@ int checkIfLegal(Board* board, Move* move)
     // If king is under attack or the castle square was under attack, move was not
     // legal
     if (all_attacks & (board->pieces[(color_to_move ^ BLACK) + KING] | castle_square))
-    {
-        board->info = prev_info >> 3;
         is_legal = 0;
-    }
     undoMove(board, *move);
     return is_legal;
 }
@@ -386,6 +394,9 @@ int8_t genAllLegalMoves(Board *board, Move *moves)
     enumIndexSquare square;
     int movecount = 0;
     int color_to_move = (bgetcol(board->info)) ? BLACK : WHITE;
+    uint64_t foes = 0;
+    for (int i = 0; i < 6; ++i)
+        foes    |= board->pieces[i + (color_to_move ^ BLACK)];
     for (int pieceType = 0; pieceType < 6; ++pieceType)
     {
         uint64_t pieces = board->pieces[pieceType + color_to_move];
@@ -397,7 +408,12 @@ int8_t genAllLegalMoves(Board *board, Move *moves)
             uint64_t bitmap =
                 genPieceAttackMap(board, pieceType, color_to_move, square);
             if (pieceType == PAWN)
+            {
+                // Add en passant
+                bitmap &= foes | (bgetenp(board->info) & 8 ?
+                              0x1UL << bgetenpsquare(board->info) : 0);
                 bitmap |= genPassivePawnMoves(board, color_to_move, square);
+            }
             if (pieceType == KING)
                 bitmap |= genPassiveKingMoves(board, color_to_move);
 
@@ -428,11 +444,9 @@ int8_t genAllLegalMoves(Board *board, Move *moves)
 
 /*
  * Updates the board based on the data provided in
- * move. Assumes the move is legal
- * Idea: Maybe return a move that can undo the current
- * move utilizing the 5 unused bits to give info about undo.
- * This could save on memory by storing a move instead of
- * a whole board in minMax()
+ * move. Assumes the move is legal. Returns a board
+ * info from before the move was made with the lower
+ * bits filled with the type of taken piece, if any
  */
 uint16_t boardMove(Board *board, Move move)
 {
@@ -462,6 +476,20 @@ uint16_t boardMove(Board *board, Move move)
 
     /* Add dst piece */
     board->pieces[mgetpiece(move) + (enemy_color ^ BLACK)] ^= mgetdstbb(move);
+
+    /* Move rooks when castling */
+    /* White Kingside */
+    if ((mgetpiece(move) == KING) && (mgetsrc(move) == IE1) && (mgetdst(move) == IG1))
+        board->pieces[ROOK + WHITE] ^= H1 | F1;
+    /* White Queenside */
+    else if ((mgetpiece(move) == KING) && (mgetsrc(move) == IE1) && (mgetdst(move) == IC1))
+        board->pieces[ROOK + WHITE] ^= A1 | D1;
+    /* Black Kingside */
+    else if ((mgetpiece(move) == KING) && (mgetsrc(move) == IE8) && (mgetdst(move) == IG8))
+        board->pieces[ROOK + BLACK] ^= H8 | F8;
+    /* Black Queenside */
+    else if ((mgetpiece(move) == KING) && (mgetsrc(move) == IE8) && (mgetdst(move) == IC8))
+        board->pieces[ROOK + BLACK] ^= A8 | D8;
 
     /* Swap color */
     board->info ^= 0x1;

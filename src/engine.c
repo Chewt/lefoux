@@ -120,6 +120,7 @@ Move find_best_move(Board* board, uint8_t depth)
 void perftRun(Board* board, PerftInfo* pi, uint8_t depth)
 {
     Move movelist[MAX_MOVES_PER_POSITION];
+    // printBoard(board);
     int n_moves = genAllLegalMoves(board, movelist);
     int i;
 
@@ -138,6 +139,7 @@ void perftRun(Board* board, PerftInfo* pi, uint8_t depth)
         uint64_t enemyPieces = 0UL;
         for (i = 0; i < 6; ++i)
             enemyPieces |= board->pieces[enemyColor + i];
+
         for (i = 0; i < n_moves; ++i)
         {
 
@@ -157,7 +159,6 @@ void perftRun(Board* board, PerftInfo* pi, uint8_t depth)
             if ((mgetpiece(movelist[i]) == PAWN) && (bgetenp(board->info) & 8)
                 && (mgetdst(movelist[i]) == bgetenpsquare(board->info)))
             {
-                printMove(movelist[i]);
                 pi->enpassants++;
                 pi->captures++;
             }
