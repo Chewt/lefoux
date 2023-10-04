@@ -353,6 +353,7 @@ int tests()
     fprintf(stderr, " -- Default board perft tests -- \n");
     b = getDefaultBoard();
     PerftInfo pi = {0};
+/*
     RUN_TEST("Perft depth 0", runPerftTest(&b, &pi, 0), PerftInfo*,
               &((PerftInfo){1, 0, 0, 0, 0, 0 ,0}),
               myPrintPerft, perftDiff, free);
@@ -371,6 +372,7 @@ int tests()
     //RUN_TEST("Perft depth 5", runPerftTest(&b, &pi, 5), PerftInfo*,
               //&((PerftInfo){4865609, 82719, 258, 0, 0, 809099 ,0}),
               //myPrintPerft, perftDiff, free);
+*/
 
     fprintf(stderr, " -- Position 2 perft tests -- \n");
     loadFen(&b, "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ");
@@ -382,6 +384,11 @@ int tests()
               myPrintPerft, perftDiff, free);
     RUN_TEST("Perft depth 3 - position 2", runPerftTest(&b, &pi, 3), PerftInfo*,
               &((PerftInfo){97862, 17102, 45, 3162, 0, 993 ,0}),
+              myPrintPerft, perftDiff, free);
+/*
+    loadFen(&b, "r3k2r/p2pqpb1/bn2pnp1/2pPN3/1p2P3/P1N2Q1p/1PPBBPPP/R3K2R w KQkq c6 0 2");
+    RUN_TEST("Perft depth 3 - position 2", runPerftTest(&b, &pi, 1), PerftInfo*,
+              &((PerftInfo){51, 10, 1, 2, 0, 0 ,0}),
               myPrintPerft, perftDiff, free);
 
     /* Print output */

@@ -120,7 +120,6 @@ Move find_best_move(Board* board, uint8_t depth)
 void perftRun(Board* board, PerftInfo* pi, uint8_t depth)
 {
     Move movelist[MAX_MOVES_PER_POSITION];
-    // printBoard(board);
     int n_moves = genAllLegalMoves(board, movelist);
     int i;
 
@@ -152,6 +151,7 @@ void perftRun(Board* board, PerftInfo* pi, uint8_t depth)
             // Captures
             if (mgetdstbb(movelist[i]) & enemyPieces)
             {
+                // printMove(movelist[i]);
                 pi->captures++;
             }
 

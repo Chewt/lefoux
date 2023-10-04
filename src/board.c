@@ -325,8 +325,13 @@ void undoMove(Board* board, Move move)
         board->pieces[ROOK + BLACK] ^= A8 | D8;
 
     // restore taken piece
-    if (((move >> 19) & 0x7) != 0x7)
-        board->pieces[(move_color^BLACK) + ((move>>19)&0x7)] ^= mgetdstbb(move);
+    if (((move >> 19) & 0x7) != 0x7) {
+        if (bgetenpsquare(move >> 22) == mgetdst(move) && ((move>>19)&0x7) == PAWN)
+            board->pieces[(move_color^BLACK) + ((move>>19)&0x7)] ^= move_color == WHITE ?
+                mgetdstbb(move) >> 8 : mgetdstbb(move) << 8;
+        else
+            board->pieces[(move_color^BLACK) + ((move>>19)&0x7)] ^= mgetdstbb(move);
+    }
 }
 
 int checkIfLegal(Board* board, Move* move)
@@ -423,8 +428,6 @@ int8_t genAllLegalMoves(Board *board, Move *moves)
                     | (bitScanForward(dst) << 7)
                     | (pieceType << 4)
                     | bgetcol(board->info);
-
-                // printMove(moves[movecount - 1]);
 
                 // Check if move is legal, if not decrement movecount
                 if (!checkIfLegal(board, (moves + movecount - 1)))
