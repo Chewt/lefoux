@@ -516,12 +516,12 @@ uint16_t boardMove(Board *board, Move move)
         board->info &= ~(0x1 << 1);
 
     /* Update en passant */
-    // Unset any enpessant info that was there before
+    // Unset any en passant info that was there before
     board->info &= ~(0xf << 5);
     if (mgetpiece(move) == PAWN)
     {
         // If move was a pawn moving two spaces, set the file that the en
-        // pessant move is on
+        // passant move is on
         if ((mgetsrcbb(move) & RANK[1]) && (mgetdstbb(move) & RANK[3]))
         {
             board->info |= 0x8 << 5;
@@ -765,4 +765,54 @@ void loadFen(Board* board, char* fen)
         board->info |= 0x0UL << 5;
     else
         board->info |= (((token[0] - 'a') | 8)) << 5;
+}
+
+void printFen(Board *board) {
+    /* Piece placement */
+    char piece_chars[] = "PNBRQKpnbrqk";
+    uint64_t piece_bb;
+    uint64_t all_pieces;
+    for (int i=PAWN; i<=_KING; i++) {
+        all_pieces |= board->pieces[i];
+    }
+    int skip_counter = 0;
+    for (int rank=7; rank >= 0; rank--) {
+        for (int file=0; file < 8; file++) {
+            int sq_idx = rank*8 + file;
+            if ((sq_idx % 8 == 0) && rank != 7) {
+                if (skip_counter) printf("%d", skip_counter);
+                skip_counter = 0;
+                printf("/");
+            }
+            if (!(piece_bb = all_pieces & (1 << sq_idx))) {
+                skip_counter++;
+                continue;
+            }
+            for (int i=PAWN; i<=_KING; i++) {
+                if (board->pieces[i] & piece_bb) {
+                    skip_counter = 0;
+                    printf("%c", piece_chars[i]);
+                }
+            }
+        }
+    }
+    /* Active color */
+    if (bgetcol(board->info) == _WHITE) printf(" w ");
+    else printf(" b ");
+    /* Castling */
+    if (bgetcas(board->info) & 4) printf("K");
+    if (bgetcas(board->info) & 8) printf("Q");
+    if (bgetcas(board->info) & 1) printf("k");
+    if (bgetcas(board->info) & 2) printf("q");
+    if (bgetcas(board->info) == 0) printf("-");
+    /* En passant */
+    if (bgetenp(board->info) & 8) {
+        int sq_idx = bgetenpsquare(board->info);
+        printf(" %c%c ", 'a' + (sq_idx / 8), '1' + (sq_idx % 8));
+    } else printf(" - ");
+    /* Since Lefoux doesn't count number of moves, we'll fill these fields
+     * with 0's. They aren't super duper important right now.
+     */
+    /* Halfmove clock and fullmove number */
+    printf("0 0\n");
 }

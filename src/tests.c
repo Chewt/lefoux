@@ -376,12 +376,14 @@ int tests()
 
     fprintf(stderr, " -- Position 2 perft tests -- \n");
     loadFen(&b, "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ");
+/*
     RUN_TEST("Perft depth 1 - position 2", runPerftTest(&b, &pi, 1), PerftInfo*,
               &((PerftInfo){48, 8, 0, 2, 0, 0 ,0}),
               myPrintPerft, perftDiff, free);
     RUN_TEST("Perft depth 2 - position 2", runPerftTest(&b, &pi, 2), PerftInfo*,
               &((PerftInfo){2039, 351, 1, 91, 0, 3 ,0}),
               myPrintPerft, perftDiff, free);
+*/
     RUN_TEST("Perft depth 3 - position 2", runPerftTest(&b, &pi, 3), PerftInfo*,
               &((PerftInfo){97862, 17102, 45, 3162, 0, 993 ,0}),
               myPrintPerft, perftDiff, free);

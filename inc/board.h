@@ -20,8 +20,8 @@
  * The first 7 bits are NOT TO BE USED.
  *
  * - En passant describes where an en passant play can happen if at all.
- *   msb is set when en pessant is possible, lower three bits indicate the
- *   file that en pessant is possible, rank can be computed by color to move
+ *   msb is set when en passant is possible, lower three bits indicate the
+ *   file that en passant is possible, rank can be computed by color to move
  * - Castling describes which castling options are still possible.
  *   0 0 0 0 <- lsb
  *   ^ ^ ^ ^
@@ -275,5 +275,9 @@ uint64_t genAllAttackMap(Board* board, int color);
 /* TODO Stuff
  */
 void loadFen(Board* board, char* fen);
+
+/* TODO Stuff
+ */
+void printFen(Board* board);
 
 #endif /* end of include guard: BOARD_H */

@@ -169,6 +169,7 @@ void perftRun(Board* board, PerftInfo* pi, uint8_t depth)
             // TESTS
             //printBoard(board);
             //printMove(movelist[i]);
+            printFen(board);
 
             uint64_t attack_map = genAllAttackMap(board, enemyColor ^ BLACK);
             if (attack_map & board->pieces[enemyColor + KING])
