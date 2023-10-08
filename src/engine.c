@@ -3,11 +3,15 @@
 #include <stdlib.h>     // rand()
 #include <stdint.h>     // Fancy integer types
 #include <string.h>     // memcpy()
+#include <omp.h>
 
 #include "engine.h"
 #include "board.h"
 #include "bitHelpers.h"
 
+#ifndef NUM_THREADS
+#define NUM_THREADS 1
+#endif
 
 /*
  * Returns the net weight of pieces on the board. A positive number
@@ -117,17 +121,64 @@ Move find_best_move(Board* board, uint8_t depth)
     return bestMove;
 }
 
-void perftRun(Board* board, PerftInfo* pi, uint8_t depth)
+void perftRunThreaded(Board* board, PerftInfo* pi, uint8_t depth)
 {
-    Move movelist[MAX_MOVES_PER_POSITION];
-    int n_moves = genAllLegalMoves(board, movelist);
-    int i;
-
+    // Below code is very similar to perftRun
     if (depth < 1)
     {
         pi->nodes = 1;
         return;
     }
+
+    // For depth == 1, it might not be worth threading
+    if (depth == 1)
+    {
+        perftRun(board, pi, depth);
+        return;
+    }
+
+    Move movelist[MAX_MOVES_PER_POSITION];
+    int n_moves = genAllLegalMoves(board, movelist);
+    int i;
+
+    PerftInfo pilist[NUM_THREADS] = {0};
+    Board boards[NUM_THREADS];
+    for (i = 0; i < NUM_THREADS; i++)
+        memcpy(boards+i, board, sizeof(Board));
+
+#pragma omp parallel for
+    for (i = 0; i < n_moves; ++i)
+    {
+        Board t;
+        memcpy(&t, &(boards[omp_get_thread_num()]), sizeof(Board));
+        boardMove(&t, movelist[i]);
+        perftRun(&t, &(pilist[omp_get_thread_num()]), depth - 1);
+    }
+
+    // Combine pi results
+    for (i=0; i<NUM_THREADS; i++)
+    {
+        pi->nodes += pilist[i].nodes;
+        pi->captures += pilist[i].captures;
+        pi->enpassants += pilist[i].enpassants;
+        pi->castles += pilist[i].castles;
+        pi->promotions += pilist[i].promotions;
+        pi->checks += pilist[i].checks;
+        pi->checkmates += pilist[i].checkmates;
+    }
+}
+
+void perftRun(Board* board, PerftInfo* pi, uint8_t depth)
+{
+    if (depth < 1)
+    {
+        pi->nodes = 1;
+        return;
+    }
+
+    Move movelist[MAX_MOVES_PER_POSITION];
+    int n_moves = genAllLegalMoves(board, movelist);
+    int i;
 
     if (depth == 1)
     {
@@ -173,7 +224,10 @@ void perftRun(Board* board, PerftInfo* pi, uint8_t depth)
 
             uint64_t attack_map = genAllAttackMap(board, enemyColor ^ BLACK);
             if (attack_map & board->pieces[enemyColor + KING])
+            {
+                //printFen(board);
                 pi->checks++;
+            }
             undoMove(board, movelist[i]);
 
             // Castles

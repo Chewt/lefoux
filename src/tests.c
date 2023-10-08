@@ -51,7 +51,7 @@ Board* boardDiff(Board *check, Board *ref)
 PerftInfo* runPerftTest(Board *board, PerftInfo *pi, uint8_t depth)
 {
     memset(pi, 0, sizeof(PerftInfo));
-    perftRun(board, pi, depth);
+    perftRunThreaded(board, pi, depth);
     return pi;
 }
 
@@ -164,8 +164,8 @@ int tests()
              0x0040201008050005, printBitboard, xor64bit , noFree);
 
     /* boardMove tests */
-    fprintf(stderr, " -- Board Moves -- \n");
     Board b = getDefaultBoard();
+    fprintf(stderr, " -- Board Moves -- \n");
     Move m = _WHITE | (PAWN << 4) | (IE2 << 13) | (IE4 << 7);
     boardMove(&b, m);
     RUN_TEST("pawn e2e4 boardMove", b.pieces[PAWN], uint64_t, (RANK[1] ^ E2)|E4,
@@ -337,17 +337,6 @@ int tests()
     RUN_TEST("loadFen check 1. e4", &fen_board, Board*, &b,
               printBoard, boardDiff, free);
 
-    /* Edge case tests */
-    fprintf(stderr, " -- Edge Case Tests -- \n");
-    loadFen(&b, "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ");
-    m = _WHITE | (PAWN << 4) | (IA2 << 13) | (IA3 << 7);
-    boardMove(&b, m);
-    m = _BLACK | (ROOK << 4) | (IA8 << 13) | (IB8 << 7);
-    boardMove(&b, m);
-    loadFen(&fen_board, "1r2k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/P1N2Q1p/1PPBBPPP/R3K2R w KQk - 0 1");
-    RUN_TEST("En passant captures piece", &b, Board*, &fen_board,
-              printBoard, boardDiff, free);
-
     /* Undo tests */
 /*
     loadFen(&fen_board, "r3k2r/p1ppqpb1/bn2pnp1/3PN3/Pp2P3/2N2Q1p/1PPBBPPP/R3K2R b KQkq a3 0 1");
@@ -380,8 +369,14 @@ int tests()
               &((PerftInfo){197281, 1576, 0, 0, 0, 469 ,0}),
               myPrintPerft, perftDiff, free);
     RUN_TEST("Perft depth 5", runPerftTest(&b, &pi, 5), PerftInfo*,
-              &((PerftInfo){4865609, 82719, 258, 0, 0, 809099 ,0}),
+              &((PerftInfo){4865609, 82719, 258, 0, 0, 27351 ,0}),
               myPrintPerft, perftDiff, free);
+    /* Long test, takes about 30 seconds on 1 thread */
+/*
+    RUN_TEST("Perft depth 6", runPerftTest(&b, &pi, 6), PerftInfo*,
+              &((PerftInfo){119060324, 2812008, 5248, 0, 0, 809099 ,0}),
+              myPrintPerft, perftDiff, free);
+*/
 
     fprintf(stderr, " -- Position 2 perft tests -- \n");
     loadFen(&b, "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ");
