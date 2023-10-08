@@ -49,7 +49,7 @@ int main(int argc, char** argv)
 {
 #ifdef _OPENMP
     fprintf( stderr, "OpenMP is supported -- version = %d\n", _OPENMP );
-    fprintf( stderr, "NUM_THREADS = %d", NUM_THREADS);
+    fprintf( stderr, "NUM_THREADS = %d\n", NUM_THREADS);
 #else
     fprintf( stderr, "No OpenMP support!\n" );
     return 1;

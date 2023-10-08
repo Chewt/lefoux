@@ -106,8 +106,9 @@ typedef enum {
 } enumIndexSquare;
 
 // Extract en passant from info
-#define bgetenp(x) ((uint8_t)(0xf & (x >> 5)))
-#define bgetenpsquare(x) ((uint8_t)((bgetenp(x) & 0x7) + ((bgetcol(x)) ? 16 : 40)))
+// Does en passant exist?
+#define bgetenp(x) ((uint8_t)(0x1 & (x >> 8)))
+#define bgetenpsquare(x) ((uint8_t)(((x >> 5) & 0x7) + ((bgetcol(x)) ? IA3 : IA6)))
 
 // Extract castling from info
 #define bgetcas(x) ((uint8_t)(0x0F & (x >> 1)))
@@ -177,6 +178,12 @@ typedef uint32_t Move;
 
 // Extract color to play from move.
 #define mgetcol(x)    ((0x01 & (x)))
+
+// Extract the taken piece
+#define mgettaken(x)  ((x >> 19) & 0x07)
+
+// Extract previous board info
+#define mgetprevinfo(x)  ((uint16_t)((x >> 22) & 0x1ff))
 
 extern const uint64_t RDIAG;
 extern const uint64_t LDIAG;
@@ -274,7 +281,7 @@ uint64_t genAllAttackMap(Board* board, int color);
 
 /* TODO Stuff
  */
-void loadFen(Board* board, char* fen);
+int loadFen(Board* board, char* fen);
 
 /* TODO Stuff
  */

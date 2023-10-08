@@ -110,9 +110,9 @@ void printBytesBinary(int num_bytes, uint64_t data)
     {
         for (j = 7; j >= 0; --j)
         {
-            printf("%d", (data & (0x1 << ((i * 8) + j))) > 0);
+            fprintf(stderr, "%d", (data & (0x1 << ((i * 8) + j))) > 0);
             if (j == 4 || j == 0)
-                printf(" ");
+                fprintf(stderr, " ");
         }
     }
 }
@@ -122,15 +122,15 @@ void printBytesBinary(int num_bytes, uint64_t data)
  */
 void printBoardInfo(uint16_t info)
 {
-    printf("raw info: 0x%04x, ", info);
+    fprintf(stderr, "raw info: 0x%04x, ", info);
     printBytesBinary(2, info);
-    printf("\n");
+    fprintf(stderr, "\n");
     char enpStr[2][5] = {
         "None",
         {bgetenpsquare(info) % 8 + 'A', bgetenpsquare(info) / 8 + '1', '\0','\0','\0'}
     };
-    printf("En passant: %s(%u)\nCastling: %c%c%c%c\nColor: %c\n",
-            bgetenp(info) & 8 ? enpStr[1] : enpStr[0], bgetenpsquare(info),
+    fprintf(stderr, "En passant: %s(%u)\nCastling: %c%c%c%c\nColor: %c\n",
+            bgetenp(info) ? enpStr[1] : enpStr[0], bgetenpsquare(info),
             (bgetcas(info) & 0x8) ? 'Q' : '-',
             (bgetcas(info) & 0x4) ? 'K' : '-',
             (bgetcas(info) & 0x2) ? 'q' : '-',
@@ -304,7 +304,7 @@ uint64_t genAllAttackMap(Board* board, int color)
 void undoMove(Board* board, Move move)
 {
     // Restore boardinfo
-    board->info = move >> 22;
+    board->info = mgetprevinfo(move);
     int move_color = (mgetcol(move)) ? BLACK : WHITE;
 
     // Undo move
@@ -325,12 +325,14 @@ void undoMove(Board* board, Move move)
         board->pieces[ROOK + BLACK] ^= A8 | D8;
 
     // restore taken piece
-    if (((move >> 19) & 0x7) != 0x7) {
-        if (bgetenpsquare(move >> 22) == mgetdst(move) && ((move>>19)&0x7) == PAWN)
-            board->pieces[(move_color^BLACK) + ((move>>19)&0x7)] ^= move_color == WHITE ?
+    if (mgettaken(move) != 0x7) {
+        if (bgetenp(board->info) && bgetenpsquare(board->info) == mgetdst(move)
+            && mgettaken(move) == PAWN)
+            board->pieces[(move_color^BLACK) + mgettaken(move)]
+                ^= move_color == WHITE ?
                 mgetdstbb(move) >> 8 : mgetdstbb(move) << 8;
         else
-            board->pieces[(move_color^BLACK) + ((move>>19)&0x7)] ^= mgetdstbb(move);
+            board->pieces[(move_color^BLACK) + mgettaken(move)] ^= mgetdstbb(move);
     }
 }
 
@@ -402,7 +404,7 @@ int8_t genAllLegalMoves(Board *board, Move *moves)
     uint64_t foes = 0;
     for (int i = 0; i < 6; ++i)
         foes    |= board->pieces[i + (color_to_move ^ BLACK)];
-    for (int pieceType = 0; pieceType < 6; ++pieceType)
+    for (int pieceType = PAWN; pieceType <= KING; ++pieceType)
     {
         uint64_t pieces = board->pieces[pieceType + color_to_move];
         while ((piece = pieces & -pieces)) {
@@ -415,7 +417,7 @@ int8_t genAllLegalMoves(Board *board, Move *moves)
             if (pieceType == PAWN)
             {
                 // Add en passant
-                bitmap &= foes | (bgetenp(board->info) & 8 ?
+                bitmap &= foes | (bgetenp(board->info) ?
                               0x1UL << bgetenpsquare(board->info) : 0);
                 bitmap |= genPassivePawnMoves(board, color_to_move, square);
             }
@@ -459,7 +461,8 @@ uint16_t boardMove(Board *board, Move move)
     int i;
     int enemy_color = (bgetcol(board->info) == _BLACK) ? WHITE : BLACK;
     uint64_t enemy_piece_dstbb = mgetdstbb(move);
-    if ((mgetpiece(move) == PAWN) && (mgetdst(move) == bgetenpsquare(board->info)))
+    if ((mgetpiece(move) == PAWN) && bgetenp(board->info) &&
+        (mgetdst(move) == bgetenpsquare(board->info)))
     {
         if (enemy_color == BLACK)
             enemy_piece_dstbb >>= 8;
@@ -620,81 +623,108 @@ void printBoard(Board *board)
 
 void printMove(Move move)
 {
-    printf("raw move: 0x%04x, ", move);
+    fprintf(stderr, "raw move: 0x%04x, ", move);
     printBytesBinary(4, move);
-    printf("\n");
-    printf("Color: ");
-    if (mgetcol(move)) printf("Black\n"); else printf("White\n");
-    printf("Piece: ");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "Color: ");
+    if (mgetcol(move)) fprintf(stderr, "Black\n"); else fprintf(stderr, "White\n");
+    fprintf(stderr, "Piece: ");
     switch (mgetpiece(move))
     {
         case PAWN:
         case _PAWN:
-            printf("Pawn\n");
+            fprintf(stderr, "Pawn\n");
             break;
         case KNIGHT:
         case _KNIGHT:
-            printf("Knight\n");
+            fprintf(stderr, "Knight\n");
             break;
         case BISHOP:
         case _BISHOP:
-            printf("Bishop\n");
+            fprintf(stderr, "Bishop\n");
             break;
         case ROOK:
         case _ROOK:
-            printf("Rook\n");
+            fprintf(stderr, "Rook\n");
             break;
         case QUEEN:
         case _QUEEN:
-            printf("Queen\n");
+            fprintf(stderr, "Queen\n");
             break;
         case KING:
         case _KING:
-            printf("King\n");
+            fprintf(stderr, "King\n");
             break;
     }
-    printf("Promotion: ");
+    fprintf(stderr, "Promotion: ");
     switch (mgetprom(move))
     {
         case PAWN:
         case _PAWN:
-            printf("None\n");
+            fprintf(stderr, "None\n");
             break;
         case KNIGHT:
         case _KNIGHT:
-            printf("Knight\n");
+            fprintf(stderr, "Knight\n");
             break;
         case BISHOP:
         case _BISHOP:
-            printf("Bishop\n");
+            fprintf(stderr, "Bishop\n");
             break;
         case ROOK:
         case _ROOK:
-            printf("Rook\n");
+            fprintf(stderr, "Rook\n");
             break;
         case QUEEN:
         case _QUEEN:
-            printf("Queen\n");
+            fprintf(stderr, "Queen\n");
             break;
         case KING:
         case _KING:
-            printf("King\n");
+            fprintf(stderr, "King\n");
             break;
     }
-    printf("Source: %c%c(%d)\n", mgetsrc(move) % 8 + 'A',
+    fprintf(stderr, "Source: %c%c(%d)\n", mgetsrc(move) % 8 + 'A',
            mgetsrc(move) / 8 + '1', mgetsrc(move));
-    printf("Destination: %c%c(%d)\n", mgetdst(move) % 8 + 'A',
+    fprintf(stderr, "Destination: %c%c(%d)\n", mgetdst(move) % 8 + 'A',
            mgetdst(move) / 8 + '1', mgetdst(move));
-    printf("Weight: %d\n", mgetweight(move));
+    fprintf(stderr, "Weight: %d\n", mgetweight(move));
+    fprintf(stderr, "Taken Piece: ");
+    switch (mgettaken(move))
+    {
+        case PAWN:
+            fprintf(stderr, "Pawn\n");
+            break;
+        case KNIGHT:
+            fprintf(stderr, "Knight\n");
+            break;
+        case BISHOP:
+            fprintf(stderr, "Bishop\n");
+            break;
+        case ROOK:
+            fprintf(stderr, "Rook\n");
+            break;
+        case QUEEN:
+            fprintf(stderr, "Queen\n");
+            break;
+        case KING:
+            fprintf(stderr, "King\n");
+            break;
+        default:
+            fprintf(stderr, "None\n");
+    }
+    fprintf(stderr, "Previous Board Info: ");
+    printBoardInfo(mgetprevinfo(move));
 }
 
-void loadFen(Board* board, char* fen)
+int loadFen(Board* board, char* fen)
 {
     memset(board, 0, sizeof(Board));
     char* fen_copy = malloc(strlen(fen) + 1);
     strcpy(fen_copy, fen);
     char* token = NULL;
-    token = strtok(fen_copy, " ");
+    /* Piece positions */
+    if (!(token = strtok(fen_copy, " "))) return 0;
     int i = 0;
     char curr_char = token[i];
     int rank = 7;
@@ -736,13 +766,15 @@ void loadFen(Board* board, char* fen)
         curr_char = token[i];
     }
 
-    token = strtok(NULL, " ");
+    /* Color to move */
+    if (!(token = strtok(NULL, " "))) return 0;
     if (token[0] == 'w')
         board->info = _WHITE;
     else if (token[0] == 'b')
         board->info = _BLACK;
 
-    token = strtok(NULL, " ");
+    /* Castling */
+    if (!(token = strtok(NULL, " "))) return 0;
     i = 0;
     curr_char = token[i];
     while (curr_char)
@@ -760,18 +792,26 @@ void loadFen(Board* board, char* fen)
         curr_char = token[++i];
     }
 
-    token = strtok(NULL, " ");
+    /* En passant */
+    if (!(token = strtok(NULL, " "))) return 0;
     if (!strcmp(token, "-"))
         board->info |= 0x0UL << 5;
     else
         board->info |= (((token[0] - 'a') | 8)) << 5;
+
+    /* Half move counter */
+    if (!(token = strtok(NULL, " "))) return 0;
+    /* Full move counter */
+    if (!(token = strtok(NULL, " "))) return 0;
+    return token - fen_copy;
 }
 
-void printFen(Board *board) {
+void printFen(Board *board)
+{
     /* Piece placement */
     char piece_chars[] = "PNBRQKpnbrqk";
     uint64_t piece_bb;
-    uint64_t all_pieces;
+    uint64_t all_pieces = 0UL;
     for (int i=PAWN; i<=_KING; i++) {
         all_pieces |= board->pieces[i];
     }
@@ -779,40 +819,44 @@ void printFen(Board *board) {
     for (int rank=7; rank >= 0; rank--) {
         for (int file=0; file < 8; file++) {
             int sq_idx = rank*8 + file;
-            if ((sq_idx % 8 == 0) && rank != 7) {
-                if (skip_counter) printf("%d", skip_counter);
+            if ((file == 0) && rank != 7) {
+                if (skip_counter) fprintf(stderr, "%d", skip_counter);
                 skip_counter = 0;
-                printf("/");
+                fprintf(stderr, "/");
             }
-            if (!(piece_bb = all_pieces & (1 << sq_idx))) {
+            if (!(piece_bb = all_pieces & (1UL << sq_idx))) {
                 skip_counter++;
                 continue;
             }
             for (int i=PAWN; i<=_KING; i++) {
                 if (board->pieces[i] & piece_bb) {
+                    if (skip_counter) fprintf(stderr, "%d", skip_counter);
+                    fprintf(stderr, "%c", piece_chars[i]);
                     skip_counter = 0;
-                    printf("%c", piece_chars[i]);
                 }
             }
         }
     }
     /* Active color */
-    if (bgetcol(board->info) == _WHITE) printf(" w ");
-    else printf(" b ");
+    if (bgetcol(board->info) == _WHITE) fprintf(stderr, " w ");
+    else fprintf(stderr, " b ");
     /* Castling */
-    if (bgetcas(board->info) & 4) printf("K");
-    if (bgetcas(board->info) & 8) printf("Q");
-    if (bgetcas(board->info) & 1) printf("k");
-    if (bgetcas(board->info) & 2) printf("q");
-    if (bgetcas(board->info) == 0) printf("-");
+    /*
+    if (bgetcas(board->info) & 4) fprintf(stderr, "K");
+    if (bgetcas(board->info) & 8) fprintf(stderr, "Q");
+    if (bgetcas(board->info) & 1) fprintf(stderr, "k");
+    if (bgetcas(board->info) & 2) fprintf(stderr, "q");
+    if (bgetcas(board->info) == 0) fprintf(stderr, "-");
+    */
+    if (1) fprintf(stderr, "-");
     /* En passant */
-    if (bgetenp(board->info) & 8) {
+    if (bgetenp(board->info)) {
         int sq_idx = bgetenpsquare(board->info);
-        printf(" %c%c ", 'a' + (sq_idx / 8), '1' + (sq_idx % 8));
-    } else printf(" - ");
+        fprintf(stderr, " %c%c ", 'a' + (sq_idx % 8), '1' + (sq_idx / 8));
+    } else fprintf(stderr, " - ");
     /* Since Lefoux doesn't count number of moves, we'll fill these fields
      * with 0's. They aren't super duper important right now.
      */
     /* Halfmove clock and fullmove number */
-    printf("0 0\n");
+    fprintf(stderr, "0 0\n");
 }
