@@ -337,6 +337,18 @@ int tests()
     RUN_TEST("loadFen check 1. e4", &fen_board, Board*, &b,
               printBoard, boardDiff, free);
 
+    /* Evaluate Board tests */
+    fprintf(stderr, " -- Evaluate Board Tests -- \n");
+    loadFen(&b, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    RUN_TEST("evaluate default board", (evaluateBoard(&b)), int, 0, printInt,
+             intDiff, noFree);
+    loadFen(&b, "rnbqkbnr/p1pppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    RUN_TEST("evaluate board 1 black pawn missing", (evaluateBoard(&b)), int, 1,
+             printInt, intDiff, noFree);
+    loadFen(&b, "rnbqkbnr/pppppppp/8/8/8/8/P1PPPPPP/RNBQKBNR w KQkq - 0 1");
+    RUN_TEST("evaluate board 1 white pawn missing", (evaluateBoard(&b)), int,
+             -1, printInt, intDiff, noFree);
+
     /* Undo tests */
 /*
     loadFen(&fen_board, "r3k2r/p1ppqpb1/bn2pnp1/3PN3/Pp2P3/2N2Q1p/1PPBBPPP/R3K2R b KQkq a3 0 1");

@@ -153,7 +153,7 @@ typedef uint32_t Move;
 #define mgetweight(x) ((int8_t)(0xFF & (x >> 19)))
 
 // Returns a move with the weight set
-#define msetweight(m, v) ((Move)(m | ((0xFF & v) << 19)))
+#define msetweight(m, v) ((Move)((m & 0x7FFFF) | ((0xFF & v) << 19)))
 
 // Convert source or destination index to bitboard
 #define indextobb(x)  ((uint64_t)(0x1UL << x))
@@ -266,6 +266,11 @@ void printBoard(Board *board);
  * @param move move to pretty print
  */
 void printMove(Move move);
+
+/*
+ * @param move move to print in SAN
+ */
+void printMoveSAN(Move move);
 
 /* TODO Stuff
  */

@@ -30,7 +30,7 @@ int isready(Board* board, char* command)
 
 int uci(Board* board, char* command)
 {
-    char* s = "readyok\n";
+    char* s = "id name Lefoux\nid author Hayden Johson, Zach Gorman\nuciok\n";
     if (write(1, s, strlen(s)) == -1)
         fprintf(stderr, "WHAT?!? there was an error\n");
     return 1;
@@ -71,9 +71,27 @@ int position(Board* board, char* command)
 
 int go(Board* board, char* command)
 {
-    char* s = "readyok\n";
-    if (write(1, s, strlen(s)) == -1)
-        fprintf(stderr, "WHAT?!? there was an error\n");
+    char *saveptr;
+    char *token = strtok_r(command, " \n", &saveptr);
+    token = strtok_r(NULL, " \n", &saveptr);
+    if (token && !strcmp(token, "depth"))
+    {
+        token = strtok_r(NULL, " \n", &saveptr);
+        if (token)
+        {
+            int depth = atoi(token);
+            Move m = findBestMove(board, depth);
+            char s[16];
+            printMove(m);
+            snprintf(s, 15, "bestmove %c%c%c%c\n", 
+                    mgetsrc(m) % 8 + 'a', 
+                    mgetsrc(m) / 8 + '1',
+                    mgetdst(m) % 8 + 'a', 
+                    mgetdst(m) / 8 + '1');
+            if (write(1, s, strlen(s)) == -1)
+                fprintf(stderr, "WHAT?!? there was an error\n");
+        }
+    }
     return 1;
 }
 
@@ -95,9 +113,7 @@ int setoption(Board* board, char* command)
 
 int ucinewgame(Board* board, char* command)
 {
-    char* s = "readyok\n";
-    if (write(1, s, strlen(s)) == -1)
-        fprintf(stderr, "WHAT?!? there was an error\n");
+    *board = getDefaultBoard();
     return 1;
 }
 

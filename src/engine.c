@@ -60,26 +60,29 @@ int8_t minMax(Board* board, uint8_t depth)
     // Assumes MAX_MOVES_PER_POSITION < 256
     uint8_t i;
     uint8_t numMoves;
+    int color = bgetcol(board->info) ? BLACK : WHITE;
 
     // Not used for the present moment
     //int8_t score;
 
-    Move bestMove = -300;
-    Board tmpBoard;
+    Move bestMove = 0;
     // MAX_MOVES_PER_POSITION*sizeof(Move) = 218 * 4 = 872 bytes
     Move moves[MAX_MOVES_PER_POSITION];
     numMoves = genAllLegalMoves(board, moves);
     for (i=0; i<numMoves; i++)
     {
-        memcpy(&tmpBoard, board, sizeof(Board));
-
-        boardMove(&tmpBoard, moves[i]);
+        Move currentMove = moves[i];
+        boardMove(board, currentMove);
         // Update the move with its weight
-        moves[i] = msetweight(moves[i], minMax(&tmpBoard, depth-1));
+        int weight = -minMax(board, depth -1);
+        moves[i] = msetweight(currentMove, weight);
+        undoMove(board, currentMove);
         // If the weight of the current move is higher than the best move,
         // update the best move. If they are the same, update half of the time
         // randomly. This favors later tying moves, oh well.
-        if (mgetweight(moves[i]) > mgetweight(bestMove) ||
+        if (bestMove == 0)
+            bestMove = moves[i];
+        else if (mgetweight(moves[i]) > mgetweight(bestMove) ||
                 (mgetweight(moves[i]) == mgetweight(bestMove) && rand() & 1))
         {
             bestMove = moves[i];
@@ -88,31 +91,33 @@ int8_t minMax(Board* board, uint8_t depth)
     return mgetweight(bestMove);
 }
 
-Move find_best_move(Board* board, uint8_t depth)
+Move findBestMove(Board* board, uint8_t depth)
 {
     // Assumes MAX_MOVES_PER_POSITION < 256
     uint8_t i;
     uint8_t numMoves;
 
-    // Not used for the present moment
-    //int8_t score;
-
+    int color = bgetcol(board->info) ? BLACK : WHITE;
     Move bestMove = 0;
-    Board tmpBoard;
     // MAX_MOVES_PER_POSITION*sizeof(Move) = 218 * 4 = 872 bytes
     Move moves[MAX_MOVES_PER_POSITION];
     numMoves = genAllLegalMoves(board, moves);
     for (i=0; i<numMoves; i++)
     {
-        memcpy(&tmpBoard, board, sizeof(Board));
-
-        boardMove(&tmpBoard, moves[i]);
+        // Copy of move is needed to preserve prevInfo
+        Move currentMove = moves[i];
+        boardMove(board, currentMove);
         // Update the move with its weight
-        moves[i] = msetweight(moves[i], minMax(&tmpBoard, depth-1));
+        int weight = minMax(board, depth - 1);
+        moves[i] = msetweight(currentMove, weight);
+            
+        undoMove(board, currentMove);
         // If the weight of the current move is higher than the best move,
         // update the best move. If they are the same, update half of the time
         // randomly. This favors later tying moves, oh well.
-        if (mgetweight(moves[i]) > mgetweight(bestMove) ||
+        if (bestMove == 0)
+            bestMove = moves[i];
+        else if (mgetweight(moves[i]) > mgetweight(bestMove) ||
                 (mgetweight(moves[i]) == mgetweight(bestMove) && rand() & 1))
         {
             bestMove = moves[i];
@@ -120,7 +125,6 @@ Move find_best_move(Board* board, uint8_t depth)
     }
     return bestMove;
 }
-
 void perftRunThreaded(Board* board, PerftInfo* pi, uint8_t depth)
 {
     // Below code is very similar to perftRun
@@ -258,10 +262,13 @@ void perftRun(Board* board, PerftInfo* pi, uint8_t depth)
 
     for (i = 0; i < n_moves; ++i)
     {
-        Board t;
-        memcpy(&t, board, sizeof(Board));
-        boardMove(&t, movelist[i]);
-        perftRun(&t, pi, depth - 1);
+        //Board t;
+        //memcpy(&t, board, sizeof(Board));
+        //boardMove(&t, movelist[i]);
+        //perftRun(&t, pi, depth - 1);
+        boardMove(board, movelist[i]);
+        perftRun(board, pi, depth - 1);
+        undoMove(board, movelist[i]);
     }
 }
 

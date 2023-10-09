@@ -717,6 +717,14 @@ void printMove(Move move)
     printBoardInfo(mgetprevinfo(move));
 }
 
+void printMoveSAN(Move move)
+{
+    fprintf(stderr, "%c%c", mgetsrc(move) % 8 + 'a',
+            mgetsrc(move) / 8 + '1');
+    fprintf(stderr, "%c%c\n", mgetdst(move) % 8 + 'a',
+            mgetdst(move) / 8 + '1');
+}
+
 int loadFen(Board* board, char* fen)
 {
     memset(board, 0, sizeof(Board));

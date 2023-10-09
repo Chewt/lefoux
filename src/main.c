@@ -59,6 +59,7 @@ int main(int argc, char** argv)
 
     /* Command line args */
     struct flags flags;
+    flags.fen[0] = 0;
     struct argp_option options[] = {
         {"fen", 'f', "STRING", 0, "start board with position", 0},
         {"test", 500, 0, 0, "Run unit tests", 0},
@@ -78,7 +79,7 @@ int main(int argc, char** argv)
 
     FILE* input = fdopen(0, "r");
 
-    Board board;
+    Board board = getDefaultBoard();
     int running = 1;
     while (running)
     {
