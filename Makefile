@@ -21,12 +21,21 @@ autothreads:
 	$(MAKE) XFLAGS="-DNUM_THREADS=$$CPUCORES";
 
 .PHONY: debug
-debug: CFLAGS += -g -DDEBUG -Wall -Wextra -Wno-unused-parameter
+debug: CFLAGS += -g -DDEBUG -Wall -Wextra # -Wno-unused-parameter
 debug: clean all
 debug: $(TARGET)
 
 $(TARGET): $(OBJECTS)
 	$(CC) $(OBJECTS) $(CFLAGS) -o $(TARGET)
+
+# Override for files to ignore specific warnings
+$(OBJDIR)/tests.o: $(SRCDIR)/tests.c $(INCLUDEDIR)/tests.h $(UNIDEPS)
+	@mkdir -p $(OBJDIR)
+	$(CC) -c $< $(CFLAGS) -o $@ -Wno-int-to-pointer-cast -Wno-unused-parameter
+
+$(OBJDIR)/uci.o: $(SRCDIR)/uci.c $(INCLUDEDIR)/uci.h $(UNIDEPS)
+	@mkdir -p $(OBJDIR)
+	$(CC) -c $< $(CFLAGS) -o $@ -Wno-unused-parameter
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.c $(INCLUDEDIR)/%.h $(UNIDEPS)
 	@mkdir -p $(OBJDIR)

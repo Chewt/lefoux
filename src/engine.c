@@ -1,10 +1,17 @@
+#include <stdio.h>
 #include <limits.h>     // INT_MIN
 #include <stdlib.h>     // rand()
 #include <stdint.h>     // Fancy integer types
 #include <string.h>     // memcpy()
+#include <omp.h>
 
+#include "engine.h"
 #include "board.h"
 #include "bitHelpers.h"
+
+#ifndef NUM_THREADS
+#define NUM_THREADS 1
+#endif
 
 /*
  * Returns the net weight of pieces on the board. A positive number
@@ -114,3 +121,154 @@ Move find_best_move(Board* board, uint8_t depth)
     return bestMove;
 }
 
+void perftRunThreaded(Board* board, PerftInfo* pi, uint8_t depth)
+{
+    // Below code is very similar to perftRun
+    if (depth < 1)
+    {
+        pi->nodes = 1;
+        return;
+    }
+
+    // For depth == 1, it might not be worth threading
+    if (depth == 1)
+    {
+        perftRun(board, pi, depth);
+        return;
+    }
+
+    Move movelist[MAX_MOVES_PER_POSITION];
+    int n_moves = genAllLegalMoves(board, movelist);
+    int i;
+
+    PerftInfo pilist[NUM_THREADS] = {0};
+    Board boards[NUM_THREADS];
+    for (i = 0; i < NUM_THREADS; i++)
+        memcpy(boards+i, board, sizeof(Board));
+
+#pragma omp parallel for
+    for (i = 0; i < n_moves; ++i)
+    {
+        Board t;
+        memcpy(&t, &(boards[omp_get_thread_num()]), sizeof(Board));
+        boardMove(&t, movelist[i]);
+        perftRun(&t, &(pilist[omp_get_thread_num()]), depth - 1);
+    }
+
+    // Combine pi results
+    for (i=0; i<NUM_THREADS; i++)
+    {
+        pi->nodes += pilist[i].nodes;
+        pi->captures += pilist[i].captures;
+        pi->enpassants += pilist[i].enpassants;
+        pi->castles += pilist[i].castles;
+        pi->promotions += pilist[i].promotions;
+        pi->checks += pilist[i].checks;
+        pi->checkmates += pilist[i].checkmates;
+    }
+}
+
+void perftRun(Board* board, PerftInfo* pi, uint8_t depth)
+{
+    if (depth < 1)
+    {
+        pi->nodes = 1;
+        return;
+    }
+
+    Move movelist[MAX_MOVES_PER_POSITION];
+    int n_moves = genAllLegalMoves(board, movelist);
+    int i;
+
+    if (depth == 1)
+    {
+        // Nodes
+        pi->nodes += n_moves;
+
+        int enemyColor = (bgetcol(board->info) == _WHITE) ? BLACK : WHITE;
+        uint64_t enemyPieces = 0UL;
+        for (i = 0; i < 6; ++i)
+            enemyPieces |= board->pieces[enemyColor + i];
+
+        for (i = 0; i < n_moves; ++i)
+        {
+
+            if ((mgetpiece(movelist[i]) == PAWN) && (mgetsrc(movelist[i]) == ID5))
+            {
+                //printBoard(board);
+                //printMove(movelist[i]);
+            }
+
+            // Captures
+            if (mgetdstbb(movelist[i]) & enemyPieces)
+            {
+                // printMove(movelist[i]);
+                pi->captures++;
+            }
+
+            // En passants
+            if ((mgetpiece(movelist[i]) == PAWN) && bgetenp(board->info)
+                && (mgetdst(movelist[i]) == bgetenpsquare(board->info)))
+            {
+                pi->enpassants++;
+                pi->captures++;
+            }
+
+            // Checks
+            boardMove(board, movelist[i]);
+
+            // TESTS
+            //printBoard(board);
+            //printMove(movelist[i]);
+            //printFen(board);
+
+            uint64_t attack_map = genAllAttackMap(board, enemyColor ^ BLACK);
+            if (attack_map & board->pieces[enemyColor + KING])
+            {
+                //printFen(board);
+                pi->checks++;
+            }
+            undoMove(board, movelist[i]);
+
+            // Castles
+            if (mgetpiece(movelist[i]) == KING)
+            {
+                if (bgetcol(board->info) == _WHITE)
+                {
+                    if ((bgetcas(board->info) & 0x8) &&
+                            mgetdst(movelist[i]) == IC1)
+                        pi->castles++;
+                    else if ((bgetcas(board->info) & 0x4) &&
+                            mgetdst(movelist[i]) == IG1)
+                        pi->castles++;
+                }
+                else if (bgetcol(board->info) == _BLACK)
+                {
+                    if ((bgetcas(board->info) & 0x2) &&
+                            mgetdst(movelist[i]) == IC8)
+                        pi->castles++;
+                    else if ((bgetcas(board->info) & 0x1) &&
+                            mgetdst(movelist[i]) == IG8)
+                        pi->castles++;
+                }
+            }
+        }
+        return;
+    }
+
+    for (i = 0; i < n_moves; ++i)
+    {
+        Board t;
+        memcpy(&t, board, sizeof(Board));
+        boardMove(&t, movelist[i]);
+        perftRun(&t, pi, depth - 1);
+    }
+}
+
+void printPerft(PerftInfo pi)
+{
+    printf("\nNodes: %ld\nCaptures: %ld\nEn Passants: %ld\nCastles: %ld\nChecks: "
+           "%ld\nCheckmates: %ld\n",
+           pi.nodes, pi.captures, pi.enpassants, pi.castles, pi.checks,
+           pi.checkmates);
+}
