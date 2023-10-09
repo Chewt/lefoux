@@ -312,16 +312,20 @@ void undoMove(Board* board, Move move)
                                                   | mgetdstbb(move));
     /* Move rooks when castling */
     /* White Kingside */
-    if ((mgetpiece(move) == KING) && (mgetsrc(move) == IE1) && (mgetdst(move) == IG1))
+    if ((mgetpiece(move) == KING) && (mgetsrc(move) == IE1)
+                                  && (mgetdst(move) == IG1))
         board->pieces[ROOK + WHITE] ^= H1 | F1;
     /* White Queenside */
-    else if ((mgetpiece(move) == KING) && (mgetsrc(move) == IE1) && (mgetdst(move) == IC1))
+    else if ((mgetpiece(move) == KING) && (mgetsrc(move) == IE1)
+                                       && (mgetdst(move) == IC1))
         board->pieces[ROOK + WHITE] ^= A1 | D1;
     /* Black Kingside */
-    else if ((mgetpiece(move) == KING) && (mgetsrc(move) == IE8) && (mgetdst(move) == IG8))
+    else if ((mgetpiece(move) == KING) && (mgetsrc(move) == IE8)
+                                       && (mgetdst(move) == IG8))
         board->pieces[ROOK + BLACK] ^= H8 | F8;
     /* Black Queenside */
-    else if ((mgetpiece(move) == KING) && (mgetsrc(move) == IE8) && (mgetdst(move) == IC8))
+    else if ((mgetpiece(move) == KING) && (mgetsrc(move) == IE8)
+                                       && (mgetdst(move) == IC8))
         board->pieces[ROOK + BLACK] ^= A8 | D8;
 
     // restore taken piece
@@ -332,15 +336,15 @@ void undoMove(Board* board, Move move)
                 ^= move_color == WHITE ?
                 mgetdstbb(move) >> 8 : mgetdstbb(move) << 8;
         else
-            board->pieces[(move_color^BLACK) + mgettaken(move)] ^= mgetdstbb(move);
+            board->pieces[(move_color^BLACK) + mgettaken(move)] ^=
+                mgetdstbb(move);
     }
 }
 
 int checkIfLegal(Board* board, Move* move)
 {
-    uint16_t prev_info = boardMove(board, *move);
-    *move |= prev_info << 19;
-    prev_info >>= 3;
+    *move = boardMove(board, *move);
+    uint16_t prev_info = mgetprevinfo(*move);
     int color_to_move = (bgetcol(board->info)) ? BLACK : WHITE;
     // Generate bitmap of all attacks from the opposite color
     uint64_t all_attacks = 0UL;
@@ -381,19 +385,19 @@ int checkIfLegal(Board* board, Move* move)
         }
     }
 
-    // If king is under attack or the castle square was under attack, move was not
-    // legal
-    if (all_attacks & (board->pieces[(color_to_move ^ BLACK) + KING] | castle_square))
+    // If king is under attack or the castle square was under attack,
+    // move was not legal
+    if (all_attacks &
+       (board->pieces[(color_to_move ^ BLACK) + KING] | castle_square))
         is_legal = 0;
     undoMove(board, *move);
     return is_legal;
 }
 
 /*
- * Populates the array moves with legal moves
- * and returns the number of legal moves.
- * Use MAX_MOVES_PER_POSITION as the max size
- * for moves
+ * Populates the array moves with legal moves that works with undoMove()
+ * and returns the number of legal moves. Use MAX_MOVES_PER_POSITION
+ * as the max size for moves
  */
 int8_t genAllLegalMoves(Board *board, Move *moves)
 {
@@ -449,11 +453,10 @@ int8_t genAllLegalMoves(Board *board, Move *moves)
 
 /*
  * Updates the board based on the data provided in
- * move. Assumes the move is legal. Returns a board
- * info from before the move was made with the lower
- * bits filled with the type of taken piece, if any
+ * move. Assumes the move is legal. Returns a move
+ * that can be used with undoMove to undo the move
  */
-uint16_t boardMove(Board *board, Move move)
+Move boardMove(Board *board, Move move)
 {
     /* Remove enemy piece if possible */
     int enemy_piece = 7;
@@ -485,16 +488,20 @@ uint16_t boardMove(Board *board, Move move)
 
     /* Move rooks when castling */
     /* White Kingside */
-    if ((mgetpiece(move) == KING) && (mgetsrc(move) == IE1) && (mgetdst(move) == IG1))
+    if ((mgetpiece(move) == KING) && (mgetsrc(move) == IE1)
+                                  && (mgetdst(move) == IG1))
         board->pieces[ROOK + WHITE] ^= H1 | F1;
     /* White Queenside */
-    else if ((mgetpiece(move) == KING) && (mgetsrc(move) == IE1) && (mgetdst(move) == IC1))
+    else if ((mgetpiece(move) == KING) && (mgetsrc(move) == IE1)
+                                       && (mgetdst(move) == IC1))
         board->pieces[ROOK + WHITE] ^= A1 | D1;
     /* Black Kingside */
-    else if ((mgetpiece(move) == KING) && (mgetsrc(move) == IE8) && (mgetdst(move) == IG8))
+    else if ((mgetpiece(move) == KING) && (mgetsrc(move) == IE8)
+                                       && (mgetdst(move) == IG8))
         board->pieces[ROOK + BLACK] ^= H8 | F8;
     /* Black Queenside */
-    else if ((mgetpiece(move) == KING) && (mgetsrc(move) == IE8) && (mgetdst(move) == IC8))
+    else if ((mgetpiece(move) == KING) && (mgetsrc(move) == IE8)
+                                       && (mgetdst(move) == IC8))
         board->pieces[ROOK + BLACK] ^= A8 | D8;
 
     /* Swap color */
@@ -537,7 +544,7 @@ uint16_t boardMove(Board *board, Move move)
         }
     }
 
-    return prev_info;
+    return (prev_info << 19) | (move & 0x7ffff);
 }
 
 Board getDefaultBoard()

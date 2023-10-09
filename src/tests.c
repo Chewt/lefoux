@@ -112,14 +112,22 @@ int tests()
     resultType resDiff = diff(resultVar, (expected)); \
     if ( !resDiff ) \
     { \
-        fprintf(stderr, "Test %s%s%s %spassed%s. Took %.6f seconds\n", \
-                nameColor, name, clear, good, clear, t.time_taken); \
+        fprintf(stderr, "Test %s%s%s %spassed%s. ", \
+                nameColor, name, clear, good, clear); \
+        if (t.time_taken > 0.0001)\
+            fprintf(stderr, "Took %.6f seconds\n", t.time_taken);\
+        else \
+            fprintf(stderr, "\n");\
         pass++; \
     } \
     else \
     { \
-        fprintf(stderr, "Test %s%s%s %sfailed%s. Took %.6f seconds\n", \
-                nameColor, name, clear, bad, clear, t.time_taken); \
+        fprintf(stderr, "Test %s%s%s %sfailed%s. ", \
+                nameColor, name, clear, bad, clear); \
+        if (t.time_taken > 0.0001)\
+            fprintf(stderr, "Took %.6f seconds\n", t.time_taken);\
+        else \
+            fprintf(stderr, "\n");\
         fprintf(stderr, "  Expected: %s", good); \
         resultFmt(expected); \
         fprintf(stderr, "%s  Actual:   %s", clear, bad); \

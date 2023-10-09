@@ -199,14 +199,12 @@ extern const uint64_t FILELIST[8];
 extern const uint64_t RANK[8];
 
 /*
- * magicLookupBishop
  * @param occupancy a bitboard of all of the pieces
  * @param square the square the attacking bishop is attacking from
  * @return bitboard of all attacks that bishop can make
  */
 uint64_t magicLookupBishop(uint64_t occupancy, enumIndexSquare square);
 /*
- * magicLookupRook
  * @param occupancy a bitboard of all of the pieces
  * @param square the square the attacking rook is attacking from
  * @return bitboard of all attacks that rook can make
@@ -214,7 +212,6 @@ uint64_t magicLookupBishop(uint64_t occupancy, enumIndexSquare square);
 uint64_t magicLookupRook(uint64_t occupancy, enumIndexSquare square);
 
 /*
- * getMoves
  * @param type the type of piece in parameter pieces
  * @param pieces a bitboard of all of the friendly pieces of the type specified
  *   in parameter type
@@ -225,13 +222,11 @@ uint64_t magicLookupRook(uint64_t occupancy, enumIndexSquare square);
 uint64_t getMoves(enumPiece type, uint64_t pieces, uint64_t friends, uint64_t foes);
 
 /*
- * printBitboard
  * @param bb a bitboard to print to stdout
  */
 void printBitboard(uint64_t bb);
 
 /*
- * genAllLegalMoves
  * @param board a pointer to a Board struct
  * @param moves a pointer to a preallocated array of type Move
  * @return number of moves in the array
@@ -239,20 +234,18 @@ void printBitboard(uint64_t bb);
 int8_t genAllLegalMoves(Board *board, Move *moves);
 
 /*
- * boardMove
  * @param board a pointer to a Board struct
  * @param move a Move to make on the board
+ * @return a move that can be used with undoMove to undo the move
  */
-uint16_t boardMove(Board *board, Move move);
+Move boardMove(Board *board, Move move);
 
 /*
- * getDefaultBoard
  * @return A Board initialized to untouched chess board
  */
 Board getDefaultBoard();
 
 /*
- * printBoardInfo
  * @param info the info section of a Board struct
  */
 void printBoardInfo(uint16_t info);
@@ -267,23 +260,41 @@ void printBoard(Board *board);
  */
 void printMove(Move move);
 
-/* TODO Stuff
+/*
+ * @brief Generates an attack map for a given piece type on a given square.
+ * This attack map considers other pieces that may block a move.
+ * @param board the board to generate the attack map from
+ * @param pieceType the type of piece to get the attack map for
+ * @param color the color to get the attack map for
+ * @param square the square that the piece is on
+ * @return a bitboard with all of the attacks for the given piece
  */
 uint64_t genPieceAttackMap(Board* board, int pieceType, int color, int square);
 
-/* TODO Stuff
+/*
+ * @param board the board to undo the move on
+ * @param move an "undo move" to undo. Undo moves use the upper bits to store
+ * the previous board info and a taken piece instead of the move's weight.
  */
 void undoMove(Board* board, Move move);
 
-/* TODO Stuff
+/*
+ * @param board the board to generate the attack maps for
+ * @param color the color of pieces to generate attack maps for.
+ * @return a bitboard with every attack for the given color
  */
 uint64_t genAllAttackMap(Board* board, int color);
 
-/* TODO Stuff
+/*
+ * @param board the board to load fen data into
+ * @param fen a string in Forsyth-Edwards Notation, see
+ * https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation
+ * @return the number of characters read from the fen string
  */
 int loadFen(Board* board, char* fen);
 
-/* TODO Stuff
+/*
+ * @param board the board to print the fen for, printed to stderr
  */
 void printFen(Board* board);
 
