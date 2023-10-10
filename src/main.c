@@ -10,10 +10,6 @@
 #include "magic.h"
 #include "uci.h"
 
-#ifndef NUM_THREADS
-#define NUM_THREADS 1
-#endif
-
 /* argp struct */
 struct flags {
     char fen[64];
@@ -73,13 +69,16 @@ int main(int argc, char** argv)
         exit(-1);
     }
 
-    // TESTING
-    printf("%s\n", flags.fen);
-
     FILE* input = fdopen(0, "r");
+
+    g_state.flags = 0;
 
     Board board;
     int running = 1;
+    // This directive enables parallelism
+    #pragma omp parallel
+    // This directive says this while loop is handled by only one thread
+    #pragma omp single
     while (running)
     {
         char* command = malloc(COMMAND_LIMIT);

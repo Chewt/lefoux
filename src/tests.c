@@ -51,6 +51,8 @@ Board* boardDiff(Board *check, Board *ref)
 PerftInfo* runPerftTest(Board *board, PerftInfo *pi, uint8_t depth)
 {
     memset(pi, 0, sizeof(PerftInfo));
+    #pragma omp parallel 
+    #pragma omp single
     perftRunThreaded(board, pi, depth);
     return pi;
 }

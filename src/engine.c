@@ -8,10 +8,7 @@
 #include "engine.h"
 #include "board.h"
 #include "bitHelpers.h"
-
-#ifndef NUM_THREADS
-#define NUM_THREADS 1
-#endif
+#include "uci.h"
 
 /*
  * Returns the net weight of pieces on the board. A positive number
@@ -64,11 +61,13 @@ int8_t minMax(Board* board, uint8_t depth)
     // Not used for the present moment
     //int8_t score;
 
-    Move bestMove = -300;
+    Move bestMove = 0;
     Board tmpBoard;
     // MAX_MOVES_PER_POSITION*sizeof(Move) = 218 * 4 = 872 bytes
     Move moves[MAX_MOVES_PER_POSITION];
     numMoves = genAllLegalMoves(board, moves);
+    if (numMoves) bestMove = moves[0];
+    bestMove = msetweight(bestMove, -127);
     for (i=0; i<numMoves; i++)
     {
         memcpy(&tmpBoard, board, sizeof(Board));
@@ -84,6 +83,7 @@ int8_t minMax(Board* board, uint8_t depth)
         {
             bestMove = moves[i];
         }
+        if (g_state.flags & UCI_STOP) break;
     }
     return mgetweight(bestMove);
 }
@@ -94,28 +94,50 @@ Move find_best_move(Board* board, uint8_t depth)
     uint8_t i;
     uint8_t numMoves;
 
-    // Not used for the present moment
-    //int8_t score;
-
-    Move bestMove = 0;
-    Board tmpBoard;
+    // Setup independent variables for each thread
+    Move bestMoves[NUM_THREADS] = {0};
+    Board boards[NUM_THREADS];
+    for (i=0; i<NUM_THREADS; i++) memcpy(&boards[i], board, sizeof(Board));
     // MAX_MOVES_PER_POSITION*sizeof(Move) = 218 * 4 = 872 bytes
     Move moves[MAX_MOVES_PER_POSITION];
     numMoves = genAllLegalMoves(board, moves);
+    for (i=0; i<NUM_THREADS; i++) 
+    {
+      if (numMoves) bestMoves[i] = moves[0];
+      bestMoves[i] = msetweight(bestMoves[i], -127);
+    }
+#pragma omp taskloop untied default(shared)
     for (i=0; i<numMoves; i++)
     {
-        memcpy(&tmpBoard, board, sizeof(Board));
-
-        boardMove(&tmpBoard, moves[i]);
+        int me = omp_get_thread_num();
+        Move undoM = boardMove(&boards[me], moves[i]);
         // Update the move with its weight
-        moves[i] = msetweight(moves[i], minMax(&tmpBoard, depth-1));
+        moves[i] = msetweight(moves[i], minMax(&boards[me], depth-1));
         // If the weight of the current move is higher than the best move,
         // update the best move. If they are the same, update half of the time
         // randomly. This favors later tying moves, oh well.
-        if (mgetweight(moves[i]) > mgetweight(bestMove) ||
-                (mgetweight(moves[i]) == mgetweight(bestMove) && rand() & 1))
+        if (mgetweight(moves[i]) > mgetweight(bestMoves[me]) ||
+                (mgetweight(moves[i]) == mgetweight(bestMoves[me]) && rand() & 1))
         {
-            bestMove = moves[i];
+            bestMoves[me] = moves[i];
+        }
+        undoMove(&boards[me], undoM);
+        // If UCI_STOP, cancel remaining tasks
+        if (g_state.flags & UCI_STOP) 
+        {
+        #pragma omp cancel taskgroup
+        }
+    }
+    // Get the best move from each thread
+    Move bestMove = 0;
+    if (numMoves) bestMove = moves[0];
+    bestMove = msetweight(bestMove, -127);
+    for (i=0; i<NUM_THREADS; i++) 
+    {
+        if (mgetweight(bestMoves[i]) > mgetweight(bestMove) ||
+                (mgetweight(bestMoves[i]) == mgetweight(bestMove) && rand() & 1))
+        {
+            bestMove = bestMoves[i];
         }
     }
     return bestMove;
@@ -146,13 +168,13 @@ void perftRunThreaded(Board* board, PerftInfo* pi, uint8_t depth)
     for (i = 0; i < NUM_THREADS; i++)
         memcpy(boards+i, board, sizeof(Board));
 
-#pragma omp parallel for
+#pragma omp taskloop untied default(shared)
     for (i = 0; i < n_moves; ++i)
     {
-        Board t;
-        memcpy(&t, &(boards[omp_get_thread_num()]), sizeof(Board));
-        boardMove(&t, movelist[i]);
-        perftRun(&t, &(pilist[omp_get_thread_num()]), depth - 1);
+        int me = omp_get_thread_num();
+        movelist[i] = boardMove(&boards[me], movelist[i]);
+        perftRun(&boards[me], &pilist[me], depth - 1);
+        undoMove(&boards[me], movelist[i]);
     }
 
     // Combine pi results

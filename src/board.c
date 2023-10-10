@@ -867,3 +867,45 @@ void printFen(Board *board)
     /* Halfmove clock and fullmove number */
     fprintf(stderr, "0 0\n");
 }
+
+Move parseLANMove(Board *board, char *movestr)
+{
+    Move m = {0};
+    if (!movestr || strlen(movestr) < 4) return m;
+    // Set source
+    m = ((movestr[0] - 'a') + (movestr[1] - '1')*8) << 13;
+    // Set destination
+    m |= ((movestr[2] - 'a') + (movestr[3] - '1')*8) << 7;
+    // Find the piece type
+    int piece_type;
+    int color;
+    for (color = _WHITE; color <= _BLACK; color++)
+        for (piece_type=PAWN; piece_type<=KING; piece_type++)
+            if (mgetsrcbb(m) & board->pieces[piece_type + color]) break;
+    m |= (piece_type << 4) | (color);
+    // Check for promotions
+    switch (movestr[4])
+    {
+        case 'n': m |= KNIGHT << 1; break;
+        case 'b': m |= BISHOP << 1; break;
+        case 'r': m |= ROOK   << 1; break;
+        case 'q': m |= QUEEN  << 1; break;
+    }
+    return m;
+}
+
+void printLANMove(Move m)
+{
+    printf("%c%c%c%c", (mgetsrc(m) % 8) + 'a',
+                       (mgetsrc(m) / 8) + '1',
+                       (mgetdst(m) % 8) + 'a',
+                       (mgetdst(m) / 8) + '1');
+    switch (mgetprom(m))
+    {
+        case KNIGHT: printf("n "); break;
+        case BISHOP: printf("b "); break;
+        case ROOK  : printf("r "); break;
+        case QUEEN : printf("q "); break;
+        default    : printf(" ");
+    }
+}
