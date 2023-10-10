@@ -289,8 +289,14 @@ void perftRun(Board* board, PerftInfo* pi, uint8_t depth)
 
 void printPerft(PerftInfo pi)
 {
+    #ifdef CSV
+    printf("%d,%ld,%ld,%ld,%ld,%ld,%ld\n", NUM_THREADS,
+           pi.nodes, pi.captures, pi.enpassants, pi.castles, pi.checks,
+           pi.checkmates);
+    #else
     printf("\nNodes: %ld\nCaptures: %ld\nEn Passants: %ld\nCastles: %ld\nChecks: "
            "%ld\nCheckmates: %ld\n",
            pi.nodes, pi.captures, pi.enpassants, pi.castles, pi.checks,
            pi.checkmates);
+    #endif
 }

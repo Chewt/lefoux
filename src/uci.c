@@ -297,7 +297,11 @@ int perft(Board* board, char* command)
     StartTimer(&t);
     perftRunThreaded(board, &p, depth);
     StopTimer(&t);
+    #ifdef CSV
+    printf("%.6f,", t.time_taken);
+    #else
     printf("Took %.6f seconds\n", t.time_taken);
+    #endif
     printPerft(p);
     return 1;
 }
