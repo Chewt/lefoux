@@ -3,6 +3,7 @@
 #include <stdlib.h>     // rand()
 #include <stdint.h>     // Fancy integer types
 #include <string.h>     // memcpy()
+
 #include <omp.h>
 
 #include "engine.h"
@@ -98,8 +99,8 @@ int alphaBetaMax( Board* board, int alpha, int beta, int depthleft ) {
     uint8_t numMoves = genAllLegalMoves(board, moves);
     int i;
     for (i = 0; i < numMoves; ++i) {
-        Move undo = moves[i];
-        boardMove(board, moves[i]);
+        Move undo = moves[i] & 0x7ffff;
+        undo |= boardMove(board, moves[i]) << 19;
         int weight = alphaBetaMin(board, alpha, beta, depthleft - 1 );
         undoMove(board, undo);
         if( weight >= beta )
@@ -116,8 +117,8 @@ int alphaBetaMin( Board* board, int alpha, int beta, int depthleft ) {
     uint8_t numMoves = genAllLegalMoves(board, moves);
     int i;
     for (i = 0; i < numMoves; ++i) {
-        Move undo = moves[i];
-        boardMove(board, moves[i]);
+        Move undo = moves[i] & 0x7ffff;
+        undo |= boardMove(board, moves[i]) << 19;
         int weight = alphaBetaMax( board, alpha, beta, depthleft - 1 );
         undoMove(board, undo);
         if( weight <= alpha )
@@ -126,6 +127,15 @@ int alphaBetaMin( Board* board, int alpha, int beta, int depthleft ) {
             beta = weight; // beta acts like min in MiniMax
     }
     return beta;
+}
+
+int compare_weights(const void* one, const void* two)
+{
+    if (mgetweight((*(Move*)one)) > mgetweight((*(Move*)two)))
+        return -1;
+    else if (mgetweight((*(Move*)one)) < mgetweight((*(Move*)two)))
+        return 1;
+    return 0;
 }
 
 Move findBestMove(Board* board, uint8_t depth)
@@ -141,15 +151,14 @@ Move findBestMove(Board* board, uint8_t depth)
     numMoves = genAllLegalMoves(board, moves);
     for (i=0; i<numMoves; i++)
     {
-        // Copy of move is needed to preserve prevInfo
-        Move currentMove = moves[i];
-        boardMove(board, currentMove);
+        Move undo = moves[i] & 0x7ffff;
+        undo |= boardMove(board, moves[i]) << 19;
         // Update the move with its weight
         //int weight = minMax(board, depth - 1);
         int weight = alphaBetaMax(board, -128, 128, depth);
-        moves[i] = msetweight(currentMove, weight);
-            
-        undoMove(board, currentMove);
+        moves[i] = msetweight(moves[i], weight);
+
+        undoMove(board, undo);
         // If the weight of the current move is higher than the best move,
         // update the best move. If they are the same, update half of the time
         // randomly. This favors later tying moves, oh well.
@@ -161,6 +170,24 @@ Move findBestMove(Board* board, uint8_t depth)
             bestMove = moves[i];
         }
     }
+    qsort(moves, numMoves, sizeof(Move), compare_weights);
+    for (i = 0; i < numMoves; ++i)
+    {
+        if (mgetweight(moves[i]) != mgetweight(bestMove))
+            break;
+    }
+    int j;
+    for (j = 0; j < i; ++j)
+    {
+        fprintf(stderr, "%c%c%c%c weight: %d\n",
+                mgetsrc(moves[j]) % 8 + 'a', 
+                mgetsrc(moves[j]) / 8 + '1',
+                mgetdst(moves[j]) % 8 + 'a', 
+                mgetdst(moves[j]) / 8 + '1',
+                mgetweight(moves[j]));
+    }
+    if (i - 1 != 0)
+        bestMove = moves[rand() % (i - 1)];
     return bestMove;
 }
 void perftRunThreaded(Board* board, PerftInfo* pi, uint8_t depth)

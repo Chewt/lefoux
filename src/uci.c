@@ -85,7 +85,7 @@ int go(Board* board, char* command)
             Move m = findBestMove(board, depth);
             StopTimer(&t);
             char s[16];
-            printMove(m);
+            //printMove(m);
             printf("Took %.6f seconds\n", t.time_taken);
             snprintf(s, 15, "bestmove %c%c%c%c\n", 
                     mgetsrc(m) % 8 + 'a', 
