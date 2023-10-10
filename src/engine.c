@@ -91,6 +91,43 @@ int8_t minMax(Board* board, uint8_t depth)
     return mgetweight(bestMove);
 }
 
+int alphaBetaMin( Board* board, int alpha, int beta, int depthleft );
+int alphaBetaMax( Board* board, int alpha, int beta, int depthleft ) {
+    if ( depthleft == 0 ) return evaluateBoard(board);
+    Move moves[MAX_MOVES_PER_POSITION];
+    uint8_t numMoves = genAllLegalMoves(board, moves);
+    int i;
+    for (i = 0; i < numMoves; ++i) {
+        Move undo = moves[i];
+        boardMove(board, moves[i]);
+        int weight = alphaBetaMin(board, alpha, beta, depthleft - 1 );
+        undoMove(board, undo);
+        if( weight >= beta )
+            return beta;   // fail hard beta-cutoff
+        if( weight > alpha )
+            alpha = weight; // alpha acts like max in MiniMax
+    }
+    return alpha;
+}
+
+int alphaBetaMin( Board* board, int alpha, int beta, int depthleft ) {
+    if ( depthleft == 0 ) return -evaluateBoard(board);
+    Move moves[MAX_MOVES_PER_POSITION];
+    uint8_t numMoves = genAllLegalMoves(board, moves);
+    int i;
+    for (i = 0; i < numMoves; ++i) {
+        Move undo = moves[i];
+        boardMove(board, moves[i]);
+        int weight = alphaBetaMax( board, alpha, beta, depthleft - 1 );
+        undoMove(board, undo);
+        if( weight <= alpha )
+            return alpha; // fail hard alpha-cutoff
+        if( weight < beta )
+            beta = weight; // beta acts like min in MiniMax
+    }
+    return beta;
+}
+
 Move findBestMove(Board* board, uint8_t depth)
 {
     // Assumes MAX_MOVES_PER_POSITION < 256
@@ -108,7 +145,8 @@ Move findBestMove(Board* board, uint8_t depth)
         Move currentMove = moves[i];
         boardMove(board, currentMove);
         // Update the move with its weight
-        int weight = minMax(board, depth - 1);
+        //int weight = minMax(board, depth - 1);
+        int weight = alphaBetaMax(board, -128, 128, depth);
         moves[i] = msetweight(currentMove, weight);
             
         undoMove(board, currentMove);

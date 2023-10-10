@@ -80,9 +80,13 @@ int go(Board* board, char* command)
         if (token)
         {
             int depth = atoi(token);
+            Timer t;
+            StartTimer(&t);
             Move m = findBestMove(board, depth);
+            StopTimer(&t);
             char s[16];
             printMove(m);
+            printf("Took %.6f seconds\n", t.time_taken);
             snprintf(s, 15, "bestmove %c%c%c%c\n", 
                     mgetsrc(m) % 8 + 'a', 
                     mgetsrc(m) / 8 + '1',
