@@ -77,16 +77,19 @@ Move findBestMove(Board* board, uint8_t depth)
     // MAX_MOVES_PER_POSITION*sizeof(Move) = 218 * 4 = 872 bytes
     Move moves[MAX_MOVES_PER_POSITION];
     numMoves = genAllLegalMoves(board, moves);
+    int8_t alpha = -127;
+    int8_t beta = 127;
+    // Generate tasks for this loop to be parallelized
 #pragma omp taskloop untied default(shared)
     for (i=0; i<numMoves; i++)
     {
         int me = omp_get_thread_num();
         Move undoM = boardMove(&boards[me], moves[i]);
         // Update the move with its weight
-        int8_t weight = -alphaBeta(&boards[me], -127, 127, depth);
+        int8_t weight = -alphaBeta(&boards[me], -beta, -alpha, depth);
         moves[i] = msetweight(moves[i], weight);
-
         undoMove(&boards[me], undoM);
+        if (weight > alpha) alpha = weight;
         // If UCI_STOP, cancel remaining tasks
         if (g_state.flags & UCI_STOP) 
         {
