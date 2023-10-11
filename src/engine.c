@@ -20,7 +20,8 @@
 int8_t netWeightOfPieces(Board* board)
 {
     int8_t weight = 0;
-    int8_t weights[] = {1, 3, 3, 5, 8, 100};
+    // Weights for PAWN, KNIGHT, BISHOP, ROOK, QUEEN, and KING
+    int8_t weights[] = {1, 3, 3, 5, 8, 120};
     // This line returns positive weight for white
     // int to_move = WHITE;
     // This line returns a positive weight for the player moving
@@ -89,6 +90,9 @@ Move findBestMove(Board* board, uint8_t depth)
         int8_t weight = -alphaBeta(&boards[me], -beta, -alpha, depth);
         moves[i] = msetweight(moves[i], weight);
         undoMove(&boards[me], undoM);
+        // Update alpha if a better weight was found. Critical to avoid race 
+        // conditions
+        #pragma omp critical
         if (weight > alpha) alpha = weight;
         // If UCI_STOP, cancel remaining tasks
         if (g_state.flags & UCI_STOP) 
@@ -99,6 +103,7 @@ Move findBestMove(Board* board, uint8_t depth)
     }
     Move bestMove = 0;
     if (numMoves) bestMove = moves[0];
+    // Sort the moves so we can find the best one!
     qsort(moves, numMoves, sizeof(Move), compare_weights);
     for (i = 0; i < numMoves; ++i)
     {
@@ -115,10 +120,12 @@ Move findBestMove(Board* board, uint8_t depth)
                 mgetdst(moves[j]) / 8 + '1',
                 mgetweight(moves[j]));
     }
+    // If there are many bestMoves, pick one randomly
     if (i - 1 != 0)
         bestMove = moves[rand() % (i - 1)];
     return bestMove;
 }
+
 void perftRunThreaded(Board* board, PerftInfo* pi, uint8_t depth)
 {
     // Below code is very similar to perftRun
