@@ -10,6 +10,9 @@
 #include "magic.h"
 #include "uci.h"
 
+/* Global variable across all files that include uci.h */
+UciState g_state = { 0 };
+
 /* argp struct */
 struct flags {
     char fen[64];

@@ -29,7 +29,8 @@ enum UciStates {
     UCI_DEBUG = 0x2
 };
 
-UciState g_state;
+/* Defined in main.c */
+extern UciState g_state;
 
 /*
  * @brief a printf wrapper that formats the output according to UCI and only 
