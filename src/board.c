@@ -368,16 +368,16 @@ int checkIfLegal(Board* board, Move* move)
         if (mgetcol(*move) == _WHITE)
         {
             if ((bgetcas(prev_info) & 0x8) && (mgetdst(*move) == IC1))
-                castle_square |= D1;
+                castle_square |= D1 | E1;
             else if ((bgetcas(prev_info) & 0x4) && (mgetdst(*move) == IG1))
-                castle_square |= F1;
+                castle_square |= F1 | E1;
         }
         else if (mgetcol(*move) == _BLACK)
         {
             if ((bgetcas(prev_info) & 0x2) && (mgetdst(*move) == IC8))
-                castle_square |= D8;
+                castle_square |= D8 | E8;
             else if ((bgetcas(prev_info) & 0x1) && (mgetdst(*move) == IG8))
-                castle_square |= F8;
+                castle_square |= F8 | E8;
         }
     }
 

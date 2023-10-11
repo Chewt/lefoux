@@ -17,32 +17,22 @@
 /*
  * Returns the net weight of pieces on the board. A positive number
  * indicates an advantage for white, negative for black, 0 for even.
+ * A variation of this returns a positive number if the player to 
+ * move has a better weight.
  */
 int8_t netWeightOfPieces(Board* board)
 {
     int8_t weight = 0;
-    const int8_t pawnWeight = 1;
-    const int8_t knightWeight = 3;
-    const int8_t bishopWeight = 3;
-    const int8_t rookWeight = 5;
-    const int8_t queenWeight = 8;
-
-    weight += ( getNumBits(board->pieces[PAWN + WHITE])
-            - getNumBits(board->pieces[PAWN + BLACK]) )
-            * pawnWeight;
-    weight += ( getNumBits(board->pieces[KNIGHT + WHITE])
-            - getNumBits(board->pieces[KNIGHT + BLACK]) )
-            * knightWeight;
-    weight += ( getNumBits(board->pieces[BISHOP + WHITE])
-            - getNumBits(board->pieces[BISHOP + BLACK]) )
-            * bishopWeight;
-    weight += ( getNumBits(board->pieces[ROOK + WHITE])
-            - getNumBits(board->pieces[ROOK + BLACK]) )
-            * rookWeight;
-    weight += ( getNumBits(board->pieces[QUEEN + WHITE])
-            - getNumBits(board->pieces[QUEEN + BLACK]) )
-            * queenWeight;
-
+    int8_t weights[] = {1, 3, 3, 5, 8, 100};
+    // This line returns positive weight for white
+    // int to_move = WHITE;
+    // This line returns a positive weight for the player moving
+    int to_move = bgetcol(board->info) ? BLACK : WHITE;
+    for (int i=PAWN; i<=KING; i++) {
+        weight += ( getNumBits(board->pieces[i + to_move])
+                -   getNumBits(board->pieces[i + (to_move ^ BLACK)])
+                ) * weights[i];
+    }
     return weight;
 }
 
@@ -51,49 +41,7 @@ int8_t evaluateBoard(Board* board)
     return netWeightOfPieces(board);
 }
 
-/*
- * Computes the weight of a move in a position using minMax.
- * Depth is in half-moves
- */
-int8_t minMax(Board* board, uint8_t depth)
-{
-    if (depth == 0) return evaluateBoard(board);
-    // Assumes MAX_MOVES_PER_POSITION < 256
-    uint8_t i;
-    uint8_t numMoves;
-    int color = bgetcol(board->info) ? BLACK : WHITE;
-
-    // Not used for the present moment
-    //int8_t score;
-
-    Move bestMove = 0;
-    // MAX_MOVES_PER_POSITION*sizeof(Move) = 218 * 4 = 872 bytes
-    Move moves[MAX_MOVES_PER_POSITION];
-    numMoves = genAllLegalMoves(board, moves);
-    for (i=0; i<numMoves; i++)
-    {
-        Move currentMove = moves[i];
-        boardMove(board, currentMove);
-        // Update the move with its weight
-        int weight = -minMax(board, depth -1);
-        moves[i] = msetweight(currentMove, weight);
-        undoMove(board, currentMove);
-        // If the weight of the current move is higher than the best move,
-        // update the best move. If they are the same, update half of the time
-        // randomly. This favors later tying moves, oh well.
-        if (bestMove == 0)
-            bestMove = moves[i];
-        else if (mgetweight(moves[i]) > mgetweight(bestMove) ||
-                (mgetweight(moves[i]) == mgetweight(bestMove) && rand() & 1))
-        {
-            bestMove = moves[i];
-        }
-    }
-    return mgetweight(bestMove);
-}
-
-int alphaBetaMin( Board* board, int alpha, int beta, int depthleft );
-int alphaBetaMax( Board* board, int alpha, int beta, int depthleft ) {
+int alphaBeta( Board* board, int8_t alpha, int8_t beta, int8_t depthleft ) {
     if ( depthleft == 0 ) return evaluateBoard(board);
     Move moves[MAX_MOVES_PER_POSITION];
     uint8_t numMoves = genAllLegalMoves(board, moves);
@@ -101,7 +49,7 @@ int alphaBetaMax( Board* board, int alpha, int beta, int depthleft ) {
     for (i = 0; i < numMoves; ++i) {
         Move undo = moves[i] & 0x7ffff;
         undo |= boardMove(board, moves[i]) << 19;
-        int weight = alphaBetaMin(board, alpha, beta, depthleft - 1 );
+        int8_t weight = -alphaBeta(board, -beta, -alpha, depthleft - 1 );
         undoMove(board, undo);
         if( weight >= beta )
             return beta;   // fail hard beta-cutoff
@@ -109,24 +57,6 @@ int alphaBetaMax( Board* board, int alpha, int beta, int depthleft ) {
             alpha = weight; // alpha acts like max in MiniMax
     }
     return alpha;
-}
-
-int alphaBetaMin( Board* board, int alpha, int beta, int depthleft ) {
-    if ( depthleft == 0 ) return -evaluateBoard(board);
-    Move moves[MAX_MOVES_PER_POSITION];
-    uint8_t numMoves = genAllLegalMoves(board, moves);
-    int i;
-    for (i = 0; i < numMoves; ++i) {
-        Move undo = moves[i] & 0x7ffff;
-        undo |= boardMove(board, moves[i]) << 19;
-        int weight = alphaBetaMax( board, alpha, beta, depthleft - 1 );
-        undoMove(board, undo);
-        if( weight <= alpha )
-            return alpha; // fail hard alpha-cutoff
-        if( weight < beta )
-            beta = weight; // beta acts like min in MiniMax
-    }
-    return beta;
 }
 
 int compare_weights(const void* one, const void* two)
@@ -155,7 +85,7 @@ Move findBestMove(Board* board, uint8_t depth)
         undo |= boardMove(board, moves[i]) << 19;
         // Update the move with its weight
         //int weight = minMax(board, depth - 1);
-        int weight = alphaBetaMax(board, -128, 128, depth);
+        int8_t weight = -alphaBeta(board, -127, 127, depth);
         moves[i] = msetweight(moves[i], weight);
 
         undoMove(board, undo);
@@ -177,7 +107,7 @@ Move findBestMove(Board* board, uint8_t depth)
             break;
     }
     int j;
-    for (j = 0; j < i; ++j)
+    for (j = 0; j < 0; ++j)
     {
         fprintf(stderr, "%c%c%c%c weight: %d\n",
                 mgetsrc(moves[j]) % 8 + 'a', 

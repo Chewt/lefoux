@@ -73,6 +73,12 @@ PerftInfo* perftDiff(PerftInfo *check, PerftInfo *ref)
 
 void myPrintPerft(PerftInfo *pi) { printPerft(*pi); }
 
+Move moveDiff(Move check, Move ref)
+{
+    // Ignore upper bits full of nonsense
+    return (check ^ ref) & 0x7ffff;
+}
+
 void noFree(void *a) { return; }
 
 /*
@@ -84,8 +90,6 @@ int tests()
 {
     int pass = 0;
     int fail = 0;
-
-
     char *name;
     Timer t;
 
@@ -133,6 +137,13 @@ int tests()
     } \
 }
 
+    Board b;
+    Board fen_board;
+    Board target;
+    Move m;
+    Move allMoves[MAX_MOVES_PER_POSITION];
+    PerftInfo pi;
+
     fprintf(stderr, " -- Bithelpers -- \n");
     RUN_TEST( "bitScanForward", bitScanForward(  0xF00  ), int, 8, printInt,
               intDiff, noFree);
@@ -164,9 +175,9 @@ int tests()
              0x0040201008050005, printBitboard, xor64bit , noFree);
 
     /* boardMove tests */
-    Board b = getDefaultBoard();
+    b = getDefaultBoard();
     fprintf(stderr, " -- Board Moves -- \n");
-    Move m = _WHITE | (PAWN << 4) | (IE2 << 13) | (IE4 << 7);
+    m = _WHITE | (PAWN << 4) | (IE2 << 13) | (IE4 << 7);
     boardMove(&b, m);
     RUN_TEST("pawn e2e4 boardMove", b.pieces[PAWN], uint64_t, (RANK[1] ^ E2)|E4,
             printBitboard, xor64bit, noFree);
@@ -239,7 +250,7 @@ int tests()
     b.pieces[BISHOP] = 0UL;
     m = _WHITE | (KING << 4) | (IE1 << 13) | (IG1 << 7);
     boardMove(&b, m);
-    Board target = getDefaultBoard();
+    target = getDefaultBoard();
     target.info |= _BLACK;
     target.info &= ~0x18;
     target.pieces[KNIGHT] = 0UL;
@@ -304,7 +315,6 @@ int tests()
     // Test cases for genAllLegalMoves
     fprintf(stderr, " -- genAllLegalMoves() -- \n");
     b = getDefaultBoard();
-    Move allMoves[MAX_MOVES_PER_POSITION];
     RUN_TEST( "genAllLegalMoves from starting position",
               (genAllLegalMoves(&b, allMoves)), int, 20, printInt, intDiff , noFree);
     m = _WHITE | (PAWN << 4) | (IH2 << 13) | (IH4 << 7);
@@ -327,7 +337,6 @@ int tests()
     /* FEN tests */
     fprintf(stderr, " -- FEN Tests -- \n");
     b = getDefaultBoard();
-    Board fen_board;
     loadFen(&fen_board, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     RUN_TEST("loadFen check default position", &fen_board, Board*, &b,
               printBoard, boardDiff, free);
@@ -364,7 +373,6 @@ int tests()
     /* Perft tests */
     fprintf(stderr, " -- Default board perft tests -- \n");
     b = getDefaultBoard();
-    PerftInfo pi = {0};
     RUN_TEST("Perft depth 0", runPerftTest(&b, &pi, 0), PerftInfo*,
               &((PerftInfo){1, 0, 0, 0, 0, 0 ,0}),
               myPrintPerft, perftDiff, free);
@@ -401,6 +409,21 @@ int tests()
     RUN_TEST("Perft depth 3 - position 2", runPerftTest(&b, &pi, 3), PerftInfo*,
               &((PerftInfo){97862, 17102, 45, 3162, 0, 993 ,0}),
               myPrintPerft, perftDiff, free);
+
+    loadFen(&b, "1k6/6R1/1K6/8/8/8/8/8 w - - 0 0");
+    m = _WHITE | (ROOK << 4) | (IG7 << 13) | (IG8 << 7);
+    RUN_TEST("Mate in one: King and Rook", findBestMove(&b, 1), Move, m,
+        printMoveSAN, moveDiff, noFree);
+
+    loadFen(&b, "1k6/6R1/7R/K7/8/8/8/8 w - - 0 0");
+    m = _WHITE | (ROOK << 4) | (IH6 << 13) | (IH8 << 7);
+    RUN_TEST("Mate in one: Rook ladder", findBestMove(&b, 1), Move, m,
+        printMoveSAN, moveDiff, noFree);
+
+    loadFen(&b, "8/1k6/6R1/K6R/8/8/8/8 w - - 0 0");
+    m = _WHITE | (ROOK << 4) | (IH5 << 13) | (IH7 << 7);
+    RUN_TEST("Mate in two: Rook ladder", findBestMove(&b, 3), Move, m,
+        printMoveSAN, moveDiff, noFree);
 
     /* Print output */
     fprintf(stderr, "Tests passed: %s%d%s of %d\n",
