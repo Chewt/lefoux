@@ -887,9 +887,11 @@ Move parseLANMove(Board *board, char *movestr)
     // Find the piece type
     int piece_type;
     int color;
-    for (color = _WHITE; color <= _BLACK; color++)
-        for (piece_type=PAWN; piece_type<=KING; piece_type++)
-            if (mgetsrcbb(m) & board->pieces[piece_type + color]) break;
+    for (piece_type=PAWN; piece_type<=KING; piece_type++)
+    {
+        if (mgetsrcbb(m) & board->pieces[piece_type + WHITE]) break;
+        if (mgetsrcbb(m) & board->pieces[piece_type + BLACK]) break;
+    }
     m |= (piece_type << 4) | (color);
     // Check for promotions
     switch (movestr[4])
