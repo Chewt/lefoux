@@ -423,12 +423,22 @@ int tests()
     fprintf(stderr, "-- Puzzle Proficiency --\n");
     loadFen(&b, "1k6/6R1/1K6/8/8/8/8/8 w - - 0 0");
     m = _WHITE | (ROOK << 4) | (IG7 << 13) | (IG8 << 7);
-    RUN_TEST("Mate in one: King and Rook", findBestMove(&b, 1), Move, m,
+    RUN_TEST("Mate in one: White King and Rook", findBestMove(&b, 1), Move, m,
+        printMoveSAN, moveDiff, noFree);
+
+    loadFen(&b, "1K6/6r1/1k6/8/8/8/8/8 b - - 0 0");
+    m = _BLACK | (ROOK << 4) | (IG7 << 13) | (IG8 << 7);
+    RUN_TEST("Mate in one: Black King and Rook", findBestMove(&b, 1), Move, m,
         printMoveSAN, moveDiff, noFree);
 
     loadFen(&b, "1k6/6R1/7R/K7/8/8/8/8 w - - 0 0");
     m = _WHITE | (ROOK << 4) | (IH6 << 13) | (IH8 << 7);
-    RUN_TEST("Mate in one: Rook ladder", findBestMove(&b, 1), Move, m,
+    RUN_TEST("Mate in one: White Rook ladder", findBestMove(&b, 1), Move, m,
+        printMoveSAN, moveDiff, noFree);
+
+    loadFen(&b, "1K6/6r1/7r/k7/8/8/8/8 b - - 0 0");
+    m = _BLACK | (ROOK << 4) | (IH6 << 13) | (IH8 << 7);
+    RUN_TEST("Mate in one: Black Rook ladder", findBestMove(&b, 1), Move, m,
         printMoveSAN, moveDiff, noFree);
 
     loadFen(&b, "8/1k6/6R1/K6R/8/8/8/8 w - - 0 0");
@@ -436,28 +446,58 @@ int tests()
     RUN_TEST("Mate in two: Rook ladder", findBestMove(&b, 3), Move, m,
         printMoveSAN, moveDiff, noFree);
 
+    loadFen(&b, "8/1K6/6r1/k6r/8/8/8/8 b - - 0 0");
+    m = _BLACK | (ROOK << 4) | (IH5 << 13) | (IH7 << 7);
+    RUN_TEST("Mate in two: Black Rook ladder", findBestMove(&b, 3), Move, m,
+        printMoveSAN, moveDiff, noFree);
+
     loadFen(&b, "7k/6b1/5Q1p/3P4/2pP4/1pP4P/1r1q2P1/4R1K1 w - - 4 36");
     m = _WHITE | (ROOK << 4) | (IE1 << 13) | (IE8 << 7);
-    RUN_TEST("Puzzle 1: Mate in two", findBestMove(&b, 4), Move, m,
+    RUN_TEST("Puzzle 1w: Mate in two", findBestMove(&b, 4), Move, m,
+        printMoveSAN, moveDiff, noFree);
+
+    loadFen(&b, "1k1r4/1p2Q1R1/p4pP1/4pP2/4p3/P1q5/1B6/K7 w - - 0 1");
+    m = _BLACK | (ROOK << 4) | (ID8 << 13) | (ID1 << 7);
+    RUN_TEST("Puzzle 1b: Mate in two", findBestMove(&b, 4), Move, m,
         printMoveSAN, moveDiff, noFree);
 
     loadFen(&b, "r4rk1/pp3ppp/2n5/3p4/4nB2/2qBP3/P1Q2PPP/R4RK1 w - - 0 17");
     m = _WHITE | (BISHOP << 4) | (ID3 << 13) | (IE4 << 7);
-    RUN_TEST("Puzzle 2: remove the defender", findBestMove(&b, 4), Move, m,
+    RUN_TEST("Puzzle 2w: remove the defender", findBestMove(&b, 4), Move, m,
+        printMoveSAN, moveDiff, noFree);
+
+    loadFen(&b, "1kr4r/ppp2q1p/3pbQ2/2bN4/4P3/5N2/PPP3PP/1KR4R w - - 0 1");
+    m = _BLACK | (BISHOP << 4) | (IE6 << 13) | (ID5 << 7);
+    RUN_TEST("Puzzle 2b: remove the defender", findBestMove(&b, 4), Move, m,
+        printMoveSAN, moveDiff, noFree);
+
+    loadFen(&b, "rn1qk2r/pp3ppp/4p3/2bn4/6b1/4PN2/PP3PPP/RNBQKB1R w KQkq - 0 1");
+    m = _WHITE | (QUEEN << 4) | (ID1 << 13) | (IA4 << 7);
+    RUN_TEST("Puzzle 3w: Fork with check", findBestMove(&b, 4), Move, m,
         printMoveSAN, moveDiff, noFree);
 
     loadFen(&b, "rnbqkb1r/pp3ppp/4pn2/6B1/2BN4/4P3/PP3PPP/RN1QK2R b KQkq - 0 7");
     m = _BLACK | (QUEEN << 4) | (ID8 << 13) | (IA5 << 7);
-    RUN_TEST("Puzzle 3: Fork with check", findBestMove(&b, 4), Move, m,
+    RUN_TEST("Puzzle 3b: Fork with check", findBestMove(&b, 4), Move, m,
         printMoveSAN, moveDiff, noFree);
 
     loadFen(&b, "3k4/5pQ1/3p4/1P2pP2/1Pr5/8/6PK/q7 w - - 0 32");
     m = _WHITE | (QUEEN << 4) | (IG7 << 13) | (IF8 << 7);
-    RUN_TEST("Puzzle 4: Fork in the future", findBestMove(&b, 5), Move, m,
+    RUN_TEST("Puzzle 4w: Fork in the future", findBestMove(&b, 5), Move, m,
+        printMoveSAN, moveDiff, noFree);
+
+    loadFen(&b, "7Q/kp6/8/5Rp1/2pP2p1/4P3/1qP5/4K3 w - - 0 1");
+    m = _BLACK | (QUEEN << 4) | (IB2 << 13) | (IC1 << 7);
+    RUN_TEST("Puzzle 4b: Fork in the future", findBestMove(&b, 5), Move, m,
         printMoveSAN, moveDiff, noFree);
 
     loadFen(&b, "4Q3/r4rkp/2p3p1/3p4/3P1P2/8/pq3PK1/3R3R w - - 8 33");
     m = _WHITE | (ROOK << 4) | (IH1 << 13) | (IH7 << 7);
+    RUN_TEST("Puzzle 5w: SACK THE ROOOOKKKKK!!!", findBestMove(&b, 5), Move, m,
+        printMoveSAN, moveDiff, noFree);
+
+    loadFen(&b, "r3r3/1kp3QP/8/2p1p3/4P3/1P3P2/PKR4R/3q4 w - - 0 1");
+    m = _BLACK | (ROOK << 4) | (IA8 << 13) | (IA2 << 7);
     RUN_TEST("Puzzle 5: SACK THE ROOOOKKKKK!!!", findBestMove(&b, 5), Move, m,
         printMoveSAN, moveDiff, noFree);
 
