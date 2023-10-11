@@ -81,6 +81,7 @@ int position(Board* board, char* command)
         if (!m) continue;
         m = boardMove(board, m);
     }
+    printBoard(board);
     return 1;
 }
 

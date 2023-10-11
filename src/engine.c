@@ -90,10 +90,16 @@ Move findBestMove(Board* board, uint8_t depth)
         int8_t weight = -alphaBeta(&boards[me], -beta, -alpha, depth);
         moves[i] = msetweight(moves[i], weight);
         undoMove(&boards[me], undoM);
+        fprintf(stderr, "%c%c%c%c weight: %d\n",
+                mgetsrc(moves[i]) % 8 + 'a', 
+                mgetsrc(moves[i]) / 8 + '1',
+                mgetdst(moves[i]) % 8 + 'a', 
+                mgetdst(moves[i]) / 8 + '1',
+                mgetweight(moves[i]));
         // Update alpha if a better weight was found. Critical to avoid race 
         // conditions
-        #pragma omp critical
-        if (weight > alpha) alpha = weight;
+        //#pragma omp critical
+        //if (weight > alpha) alpha = weight;
         // If UCI_STOP, cancel remaining tasks
         if (g_state.flags & UCI_STOP) 
         {
