@@ -9,10 +9,7 @@
 #include "engine.h"
 #include "board.h"
 #include "bitHelpers.h"
-
-#ifndef NUM_THREADS
-#define NUM_THREADS 1
-#endif
+#include "uci.h"
 
 /*
  * Returns the net weight of pieces on the board. A positive number
@@ -28,7 +25,8 @@ int8_t netWeightOfPieces(Board* board)
     // int to_move = WHITE;
     // This line returns a positive weight for the player moving
     int to_move = bgetcol(board->info) ? BLACK : WHITE;
-    for (int i=PAWN; i<=KING; i++) {
+    for (int i=PAWN; i<=KING; i++) 
+    {
         weight += ( getNumBits(board->pieces[i + to_move])
                 -   getNumBits(board->pieces[i + (to_move ^ BLACK)])
                 ) * weights[i];
@@ -47,8 +45,7 @@ int alphaBeta( Board* board, int8_t alpha, int8_t beta, int8_t depthleft ) {
     uint8_t numMoves = genAllLegalMoves(board, moves);
     int i;
     for (i = 0; i < numMoves; ++i) {
-        Move undo = moves[i] & 0x7ffff;
-        undo |= boardMove(board, moves[i]) << 19;
+        Move undo = boardMove(board, moves[i]);
         int8_t weight = -alphaBeta(board, -beta, -alpha, depthleft - 1 );
         undoMove(board, undo);
         if( weight >= beta )
@@ -74,32 +71,31 @@ Move findBestMove(Board* board, uint8_t depth)
     uint8_t i;
     uint8_t numMoves;
 
-    int color = bgetcol(board->info) ? BLACK : WHITE;
-    Move bestMove = 0;
+    // Setup independent variables for each thread
+    Board boards[NUM_THREADS];
+    for (i=0; i<NUM_THREADS; i++) memcpy(&boards[i], board, sizeof(Board));
     // MAX_MOVES_PER_POSITION*sizeof(Move) = 218 * 4 = 872 bytes
     Move moves[MAX_MOVES_PER_POSITION];
     numMoves = genAllLegalMoves(board, moves);
+#pragma omp taskloop untied default(shared)
     for (i=0; i<numMoves; i++)
     {
-        Move undo = moves[i] & 0x7ffff;
-        undo |= boardMove(board, moves[i]) << 19;
+        int me = omp_get_thread_num();
+        Move undoM = boardMove(&boards[me], moves[i]);
         // Update the move with its weight
-        //int weight = minMax(board, depth - 1);
-        int8_t weight = -alphaBeta(board, -127, 127, depth);
+        int8_t weight = -alphaBeta(&boards[me], -127, 127, depth);
         moves[i] = msetweight(moves[i], weight);
 
-        undoMove(board, undo);
-        // If the weight of the current move is higher than the best move,
-        // update the best move. If they are the same, update half of the time
-        // randomly. This favors later tying moves, oh well.
-        if (bestMove == 0)
-            bestMove = moves[i];
-        else if (mgetweight(moves[i]) > mgetweight(bestMove) ||
-                (mgetweight(moves[i]) == mgetweight(bestMove) && rand() & 1))
+        undoMove(&boards[me], undoM);
+        // If UCI_STOP, cancel remaining tasks
+        if (g_state.flags & UCI_STOP) 
         {
-            bestMove = moves[i];
+            #pragma omp cancel taskgroup
+            // Similar to break;
         }
     }
+    Move bestMove = 0;
+    if (numMoves) bestMove = moves[0];
     qsort(moves, numMoves, sizeof(Move), compare_weights);
     for (i = 0; i < numMoves; ++i)
     {
@@ -107,7 +103,7 @@ Move findBestMove(Board* board, uint8_t depth)
             break;
     }
     int j;
-    for (j = 0; j < 0; ++j)
+    for (j = 0; j < i; ++j)
     {
         fprintf(stderr, "%c%c%c%c weight: %d\n",
                 mgetsrc(moves[j]) % 8 + 'a', 
@@ -145,13 +141,13 @@ void perftRunThreaded(Board* board, PerftInfo* pi, uint8_t depth)
     for (i = 0; i < NUM_THREADS; i++)
         memcpy(boards+i, board, sizeof(Board));
 
-#pragma omp parallel for
+#pragma omp taskloop untied default(shared)
     for (i = 0; i < n_moves; ++i)
     {
-        Board t;
-        memcpy(&t, &(boards[omp_get_thread_num()]), sizeof(Board));
-        boardMove(&t, movelist[i]);
-        perftRun(&t, &(pilist[omp_get_thread_num()]), depth - 1);
+        int me = omp_get_thread_num();
+        movelist[i] = boardMove(&boards[me], movelist[i]);
+        perftRun(&boards[me], &pilist[me], depth - 1);
+        undoMove(&boards[me], movelist[i]);
     }
 
     // Combine pi results
@@ -269,8 +265,14 @@ void perftRun(Board* board, PerftInfo* pi, uint8_t depth)
 
 void printPerft(PerftInfo pi)
 {
+    #ifdef CSV
+    printf("%d,%ld,%ld,%ld,%ld,%ld,%ld\n", NUM_THREADS,
+           pi.nodes, pi.captures, pi.enpassants, pi.castles, pi.checks,
+           pi.checkmates);
+    #else
     printf("\nNodes: %ld\nCaptures: %ld\nEn Passants: %ld\nCastles: %ld\nChecks: "
            "%ld\nCheckmates: %ld\n",
            pi.nodes, pi.captures, pi.enpassants, pi.castles, pi.checks,
            pi.checkmates);
+    #endif
 }

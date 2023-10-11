@@ -16,9 +16,13 @@ PERFARGS = --magic
 all: $(TARGET)
 
 .PHONY: autothreads
-autothreads:
+autothreads: clean
 	CPUCORES=$$( cat /proc/cpuinfo | gawk 'match($$0, /cpu cores\s: (.*$$)/, groups) {print groups[1]}' | tail -1); \
 	$(MAKE) XFLAGS="-DNUM_THREADS=$$CPUCORES";
+
+.PHONY: single
+single: clean
+	$(MAKE) XFLAGS="-DNUM_THREADS=1";
 
 .PHONY: debug
 debug: CFLAGS += -g -DDEBUG -Wall -Wextra # -Wno-unused-parameter

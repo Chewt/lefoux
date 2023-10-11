@@ -51,6 +51,8 @@ Board* boardDiff(Board *check, Board *ref)
 PerftInfo* runPerftTest(Board *board, PerftInfo *pi, uint8_t depth)
 {
     memset(pi, 0, sizeof(PerftInfo));
+    #pragma omp parallel 
+    #pragma omp single
     perftRunThreaded(board, pi, depth);
     return pi;
 }
@@ -116,14 +118,22 @@ int tests()
     resultType resDiff = diff(resultVar, (expected)); \
     if ( !resDiff ) \
     { \
-        fprintf(stderr, "Test %s%s%s %spassed%s. Took %.6f seconds\n", \
-                nameColor, name, clear, good, clear, t.time_taken); \
+        fprintf(stderr, "Test %s%s%s %spassed%s. ", \
+                nameColor, name, clear, good, clear); \
+        if (t.time_taken > 0.0001)\
+            fprintf(stderr, "Took %.6f seconds\n", t.time_taken);\
+        else \
+            fprintf(stderr, "\n");\
         pass++; \
     } \
     else \
     { \
-        fprintf(stderr, "Test %s%s%s %sfailed%s. Took %.6f seconds\n", \
-                nameColor, name, clear, bad, clear, t.time_taken); \
+        fprintf(stderr, "Test %s%s%s %sfailed%s. ", \
+                nameColor, name, clear, bad, clear); \
+        if (t.time_taken > 0.0001)\
+            fprintf(stderr, "Took %.6f seconds\n", t.time_taken);\
+        else \
+            fprintf(stderr, "\n");\
         fprintf(stderr, "  Expected: %s", good); \
         resultFmt(expected); \
         fprintf(stderr, "%s  Actual:   %s", clear, bad); \
@@ -410,6 +420,7 @@ int tests()
               &((PerftInfo){97862, 17102, 45, 3162, 0, 993 ,0}),
               myPrintPerft, perftDiff, free);
 
+    fprintf(stderr, "-- Puzzle Proficiency --\n");
     loadFen(&b, "1k6/6R1/1K6/8/8/8/8/8 w - - 0 0");
     m = _WHITE | (ROOK << 4) | (IG7 << 13) | (IG8 << 7);
     RUN_TEST("Mate in one: King and Rook", findBestMove(&b, 1), Move, m,
@@ -423,6 +434,31 @@ int tests()
     loadFen(&b, "8/1k6/6R1/K6R/8/8/8/8 w - - 0 0");
     m = _WHITE | (ROOK << 4) | (IH5 << 13) | (IH7 << 7);
     RUN_TEST("Mate in two: Rook ladder", findBestMove(&b, 3), Move, m,
+        printMoveSAN, moveDiff, noFree);
+
+    loadFen(&b, "7k/6b1/5Q1p/3P4/2pP4/1pP4P/1r1q2P1/4R1K1 w - - 4 36");
+    m = _WHITE | (ROOK << 4) | (IE1 << 13) | (IE8 << 7);
+    RUN_TEST("Puzzle 1: Mate in two", findBestMove(&b, 4), Move, m,
+        printMoveSAN, moveDiff, noFree);
+
+    loadFen(&b, "r4rk1/pp3ppp/2n5/3p4/4nB2/2qBP3/P1Q2PPP/R4RK1 w - - 0 17");
+    m = _WHITE | (BISHOP << 4) | (ID3 << 13) | (IE4 << 7);
+    RUN_TEST("Puzzle 2: remove the defender", findBestMove(&b, 4), Move, m,
+        printMoveSAN, moveDiff, noFree);
+
+    loadFen(&b, "rnbqkb1r/pp3ppp/4pn2/6B1/2BN4/4P3/PP3PPP/RN1QK2R b KQkq - 0 7");
+    m = _BLACK | (QUEEN << 4) | (ID8 << 13) | (IA5 << 7);
+    RUN_TEST("Puzzle 3: Fork with check", findBestMove(&b, 4), Move, m,
+        printMoveSAN, moveDiff, noFree);
+
+    loadFen(&b, "3k4/5pQ1/3p4/1P2pP2/1Pr5/8/6PK/q7 w - - 0 32");
+    m = _WHITE | (QUEEN << 4) | (IG7 << 13) | (IF8 << 7);
+    RUN_TEST("Puzzle 4: Fork in the future", findBestMove(&b, 5), Move, m,
+        printMoveSAN, moveDiff, noFree);
+
+    loadFen(&b, "4Q3/r4rkp/2p3p1/3p4/3P1P2/8/pq3PK1/3R3R w - - 8 33");
+    m = _WHITE | (ROOK << 4) | (IH1 << 13) | (IH7 << 7);
+    RUN_TEST("Puzzle 5: SACK THE ROOOOKKKKK!!!", findBestMove(&b, 5), Move, m,
         printMoveSAN, moveDiff, noFree);
 
     /* Print output */
