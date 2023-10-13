@@ -145,7 +145,8 @@ typedef enum {
  *   bits are file, upper 3 rank
  * - Piece is the type of piece that is moving
  * - Color is the color of the piece that is moving
- * - Promote is the piece that a pawn will promote to
+ * - Promote is the piece that a pawn will promote to. Use PAWN when there is 
+ *   no promotion
  *****************************************************************************/
 typedef uint32_t Move;
 
@@ -184,6 +185,22 @@ typedef uint32_t Move;
 
 // Extract previous board info
 #define mgetprevinfo(x)  ((uint16_t)((x >> 22) & 0x1ff))
+
+/*
+ * @param lead The leading bits in the move. Could be weight or undo info
+ * @param src The index of the source square
+ * @param dst The index of the destination square
+ * @param piece The type of piece that is moving
+ * @param promote The piece a pawn is promoting to. Use PAWN when there 
+ * is no promotion
+ * @param color The color to move. Use _WHITE and _BLACK (notice underscores)
+ */
+inline Move mcreate(int lead, uint8_t src, uint8_t dst, uint8_t piece, 
+                    uint8_t promote, uint8_t color) 
+{
+    return ( (lead << 19)|((src & 0x3f) << 13)|((dst & 0x3f) << 7)| 
+             ((piece & 0x7) << 4)|((promote & 0x7) << 1)|(color & 1));
+}
 
 extern const uint64_t RDIAG;
 extern const uint64_t LDIAG;

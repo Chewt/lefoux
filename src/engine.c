@@ -57,7 +57,7 @@ int alphaBeta( Board* board, int8_t alpha, int8_t beta, int8_t depthleft ) {
     return alpha;
 }
 
-int compare_weights(const void* one, const void* two)
+int compare_move_weights(const void* one, const void* two)
 {
     if (mgetweight((*(Move*)one)) > mgetweight((*(Move*)two)))
         return -1;
@@ -78,7 +78,7 @@ Move findBestMove(Board* board, uint8_t depth)
     // MAX_MOVES_PER_POSITION*sizeof(Move) = 218 * 4 = 872 bytes
     Move moves[MAX_MOVES_PER_POSITION];
     numMoves = genAllLegalMoves(board, moves);
-    int8_t alpha = -127;
+    int8_t alpha = -126;
     int8_t beta = 127;
     // Generate tasks for this loop to be parallelized
 #pragma omp taskloop untied default(shared)
@@ -87,19 +87,17 @@ Move findBestMove(Board* board, uint8_t depth)
         int me = omp_get_thread_num();
         Move undoM = boardMove(&boards[me], moves[i]);
         // Update the move with its weight
-        int8_t weight = -alphaBeta(&boards[me], -beta, -alpha, depth);
+        int8_t weight = -alphaBeta(&boards[me], -beta, -(alpha - 1), depth);
         moves[i] = msetweight(moves[i], weight);
         undoMove(&boards[me], undoM);
-        fprintf(stderr, "%c%c%c%c weight: %d\n",
-                mgetsrc(moves[i]) % 8 + 'a', 
-                mgetsrc(moves[i]) / 8 + '1',
-                mgetdst(moves[i]) % 8 + 'a', 
-                mgetdst(moves[i]) / 8 + '1',
-                mgetweight(moves[i]));
         // Update alpha if a better weight was found. Critical to avoid race 
         // conditions
-        //#pragma omp critical
-        //if (weight > alpha) alpha = weight;
+        #pragma omp critical
+        if (weight > alpha) {
+            alpha = weight;
+            // Update global statet best move in case the search is interrupted
+            g_state.bestMove = moves[i];
+        }
         // If UCI_STOP, cancel remaining tasks
         if (g_state.flags & UCI_STOP) 
         {
@@ -107,17 +105,17 @@ Move findBestMove(Board* board, uint8_t depth)
             // Similar to break;
         }
     }
+    // Sort the moves so we can find the best one!
+    qsort(moves, numMoves, sizeof(Move), compare_move_weights);
     Move bestMove = 0;
     if (numMoves) bestMove = moves[0];
-    // Sort the moves so we can find the best one!
-    qsort(moves, numMoves, sizeof(Move), compare_weights);
     for (i = 0; i < numMoves; ++i)
     {
         if (mgetweight(moves[i]) != mgetweight(bestMove))
             break;
     }
     int j;
-    for (j = 0; j < i; ++j)
+    for (j = 0; j < 0; ++j)
     {
         fprintf(stderr, "%c%c%c%c weight: %d\n",
                 mgetsrc(moves[j]) % 8 + 'a', 
@@ -127,7 +125,7 @@ Move findBestMove(Board* board, uint8_t depth)
                 mgetweight(moves[j]));
     }
     // If there are many bestMoves, pick one randomly
-    if (i - 1 != 0)
+    if (i - 1 > 0)
         bestMove = moves[rand() % (i - 1)];
     return bestMove;
 }

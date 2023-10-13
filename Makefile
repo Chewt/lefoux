@@ -15,9 +15,15 @@ PERFARGS = --magic
 .PHONY: all
 all: $(TARGET)
 
+# Using TOTALTHREADS is better when there are many memory lookups such as 
+# when evaluating positions with mostly bishops, queens, and rooks while
+# CPUCORES is better when there is mostly computation and few memory lookups
+# such positions with many knights and pawns. In general, CPUCORES is probably 
+# a better default but is subject to tweaking
 .PHONY: autothreads
 autothreads: clean
 	CPUCORES=$$( cat /proc/cpuinfo | gawk 'match($$0, /cpu cores\s: (.*$$)/, groups) {print groups[1]}' | tail -1); \
+	TOTALTHREADS=$$( cat /proc/cpuinfo | gawk 'match($$0, /processor\s:(.*$$)/, groups) {print groups[1]}' | tail -1); TOTALTHREADS=$$(echo "$$TOTALTHREADS + 1" | bc);\
 	$(MAKE) XFLAGS="-DNUM_THREADS=$$CPUCORES";
 
 .PHONY: single

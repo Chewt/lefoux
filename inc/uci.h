@@ -45,4 +45,6 @@ extern UciState g_state;
 
 int ProcessCommand(Board* board, char* command);
 
+void uciDebug(char *info);
+
 #endif /* end of include guard: UCI_H */

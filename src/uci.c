@@ -75,13 +75,13 @@ int position(Board* board, char* command)
     /* Process moves after position is set */
     /* Token should be "moves" */
     token = strtok_r(NULL, " \n", &saveptr);
+    /* Now each token should be a LAN move */
     while ( (token = strtok_r(NULL, " \n", &saveptr)) )
     {
         Move m = parseLANMove(board, token);
         if (!m) continue;
         m = boardMove(board, m);
     }
-    printBoard(board);
     return 1;
 }
 
@@ -177,27 +177,38 @@ int go(Board* board, char* command)
     #pragma omp task untied 
     #endif
     {
+        // This section is basically the guts of findBestMove
         g_state.bestMove = msetweight(0, -127);
         if (!numMoves) g_state.bestMove = findBestMove(board, depth);
-        for (int i=0; i<numMoves; i++)
+        int i;
+        for (i=0; i<numMoves; i++)
         {
             Move undoM = boardMove(board, moves[i]);
             moves[i] = msetweight(moves[i],
                     mgetweight(findBestMove(board, depth)));
             undoMove(board, undoM);
-            if (mgetweight(moves[i]) > mgetweight(g_state.bestMove) ||
-            (mgetweight(moves[i]) == mgetweight(g_state.bestMove) && rand() & 1))
-                g_state.bestMove = moves[i];
             if (g_state.flags & UCI_STOP) break;
+            // Update global state in case this is interrupted
+            if (mgetweight(moves[i]) > mgetweight(g_state.bestMove))
+                g_state.bestMove = moves[i];
         }
         g_state.flags |= UCI_STOP;
+        qsort(moves, i, sizeof(Move), compare_move_weights);
+        if (numMoves) g_state.bestMove = moves[0];
+        for (i = 0; i < numMoves; ++i)
+        {
+            if (mgetweight(moves[i]) != mgetweight(g_state.bestMove))
+                break;
+        }
+        // If there are many bestMoves, pick one randomly
+        if (i - 1 > 0)
+            g_state.bestMove = moves[rand() % (i - 1)];
         /* Deliver bestMove */
         if (!ponder) {
             char s[] = {"bestmove a1h8q\n"};
             sprintLANMove(s + 9, g_state.bestMove);
             int n = strlen(s);
             s[n] = '\n';
-            // printMove(g_state.bestMove);
             if (write(1, s, strlen(s)) == -1)
                 fprintf(stderr, "Error writing to stdout");
         }
@@ -352,4 +363,21 @@ int ProcessCommand(Board* board, char* command)
     }
     fprintf(stderr, "Unknown command: %s\n", token);
     return 1;
+}
+
+void uciInfo(char *info)
+{
+    char* s = "info string ";
+    char* n = "\n";
+    if (write(1, s, strlen(s)) == -1)
+        fprintf(stderr, "Error writing to stdout");
+    if (write(1, info, strlen(info)) == -1)
+        fprintf(stderr, "Error writing to stdout");
+    if (write(1, n, strlen(n)) == -1)
+        fprintf(stderr, "Error writing to stdout");
+}
+
+void uciDebug(char *info)
+{
+    if (g_state.flags & UCI_DEBUG) uciInfo(info);
 }

@@ -35,6 +35,8 @@ static int parse_opt (int key, char *arg, struct argp_state *state)
             break;
         case 500:
             // Program should return non-zero if a test fails
+            #pragma omp parallel
+            #pragma omp single
             result = tests();
             if (result) exit(result);
             break;
