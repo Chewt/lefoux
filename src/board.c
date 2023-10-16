@@ -886,7 +886,7 @@ Move parseLANMove(Board *board, char *movestr)
     m |= ((movestr[2] - 'a') + (movestr[3] - '1')*8) << 7;
     // Find the piece type
     int piece_type;
-    int color;
+    int color = bgetcol(board->info);
     for (piece_type=PAWN; piece_type<=KING; piece_type++)
     {
         if (mgetsrcbb(m) & board->pieces[piece_type + WHITE]) break;
