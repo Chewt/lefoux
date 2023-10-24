@@ -14,7 +14,7 @@
 /*
  * Returns the net weight of pieces on the board. A positive number
  * indicates an advantage for white, negative for black, 0 for even.
- * A variation of this returns a positive number if the player to 
+ * A variation of this returns a positive number if the player to
  * move has a better weight.
  */
 int8_t netWeightOfPieces(Board* board)
@@ -26,7 +26,7 @@ int8_t netWeightOfPieces(Board* board)
     // int to_move = WHITE;
     // This line returns a positive weight for the player moving
     int to_move = bgetcol(board->info) ? BLACK : WHITE;
-    for (int i=PAWN; i<=KING; i++) 
+    for (int i=PAWN; i<=KING; i++)
     {
         weight += ( getNumBits(board->pieces[i + to_move])
                 -   getNumBits(board->pieces[i + (to_move ^ BLACK)])
@@ -90,7 +90,7 @@ Move findBestMove(Board* board, uint8_t depth)
         int8_t weight = -alphaBeta(&boards[me], -beta, -(alpha - 1), depth);
         moves[i] = msetweight(moves[i], weight);
         undoMove(&boards[me], undoM);
-        // Update alpha if a better weight was found. Critical to avoid race 
+        // Update alpha if a better weight was found. Critical to avoid race
         // conditions
         #pragma omp critical
         if (weight > alpha) {
@@ -99,7 +99,7 @@ Move findBestMove(Board* board, uint8_t depth)
             g_state.bestMove = moves[i];
         }
         // If UCI_STOP, cancel remaining tasks
-        if (g_state.flags & UCI_STOP) 
+        if (g_state.flags & UCI_STOP)
         {
             #pragma omp cancel taskgroup
             // Similar to break;
@@ -118,9 +118,9 @@ Move findBestMove(Board* board, uint8_t depth)
     for (j = 0; j < 0; ++j)
     {
         fprintf(stderr, "%c%c%c%c weight: %d\n",
-                mgetsrc(moves[j]) % 8 + 'a', 
+                mgetsrc(moves[j]) % 8 + 'a',
                 mgetsrc(moves[j]) / 8 + '1',
-                mgetdst(moves[j]) % 8 + 'a', 
+                mgetdst(moves[j]) % 8 + 'a',
                 mgetdst(moves[j]) / 8 + '1',
                 mgetweight(moves[j]));
     }

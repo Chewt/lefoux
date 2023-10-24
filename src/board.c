@@ -886,11 +886,19 @@ Move parseLANMove(Board *board, char *movestr)
     m |= ((movestr[2] - 'a') + (movestr[3] - '1')*8) << 7;
     // Find the piece type
     int piece_type;
-    int color;
+    int color = 0;
     for (piece_type=PAWN; piece_type<=KING; piece_type++)
     {
-        if (mgetsrcbb(m) & board->pieces[piece_type + WHITE]) break;
-        if (mgetsrcbb(m) & board->pieces[piece_type + BLACK]) break;
+        if (mgetsrcbb(m) & board->pieces[piece_type + WHITE])
+        {
+            color = _WHITE;
+            break;
+        }
+        if (mgetsrcbb(m) & board->pieces[piece_type + BLACK])
+        {
+            color = _BLACK;
+            break;
+        }
     }
     m |= (piece_type << 4) | (color);
     // Check for promotions

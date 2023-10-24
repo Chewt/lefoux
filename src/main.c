@@ -34,11 +34,14 @@ static int parse_opt (int key, char *arg, struct argp_state *state)
             memcpy(flags->fen, arg, strlen(arg));
             break;
         case 500:
-            // Program should return non-zero if a test fails
             #pragma omp parallel
             #pragma omp single
             result = tests();
+            // Program should return non-zero if a test fails
             if (result) exit(result);
+            // This line always exit after a test, comment to exit only after
+            // a failure
+            exit(result);
             break;
         case 501:
             exit(computeMagic());

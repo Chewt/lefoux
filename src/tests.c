@@ -107,7 +107,7 @@ int tests()
      * @param diffFree a function to free result of diff if the result is some
      *    sort of poiner. If no need to free, leave noFree
      */
-#define RUN_TEST( label, testCode, resultType, expected, resultFmt, diff, diffFree ) { \
+#define RUN_TEST( label, testCode, resultType, expected, resultFmt, diff, diffFree ) \
     { \
     name = label; \
     StartTimer(&t); \
@@ -142,8 +142,7 @@ int tests()
         fail++; \
         if (resDiff) diffFree((void*)resDiff); \
     } \
-    } \
-}
+    }
 
     Board b;
     Board fen_board;
@@ -153,6 +152,7 @@ int tests()
     Move allMoves[MAX_MOVES_PER_POSITION];
     PerftInfo pi;
 
+    /* Bithelpers Tests */
     fprintf(stderr, " -- Bithelpers -- \n");
     RUN_TEST( "bitScanForward", bitScanForward(  0xF00  ), int, 8, printInt,
               intDiff, noFree);
@@ -164,6 +164,7 @@ int tests()
               uint64_t, 0xFF00000000000000UL, printLongHex, xor64bit, noFree);
     RUN_TEST( "getNumBits", getNumBits( 0xFFUL ), int, 8, printInt, intDiff, noFree);
 
+    /* Magic Lookup Tests */
     fprintf(stderr, " -- Magic Lookup -- \n");
     RUN_TEST( "magicLookupRook few occupancies",
               magicLookupRook( 0x103UL , IA1 ), uint64_t, 0x102UL,
@@ -183,7 +184,7 @@ int tests()
              magicLookupBishop( 0xFFFFUL << 48, IB2 ), uint64_t,
              0x0040201008050005, printBitboard, xor64bit , noFree);
 
-    /* boardMove tests */
+    /* boardMove Tests */
     b = getDefaultBoard();
     fprintf(stderr, " -- Board Moves -- \n");
     m = mcreate(0, IE2, IE4, PAWN, 0, _WHITE);
@@ -321,7 +322,7 @@ int tests()
     RUN_TEST("Castling black queenside", &b, Board*,
             &target, printBoard, boardDiff, free);
 
-    // Test cases for genAllLegalMoves
+    /* genAllLegalMoves Tests */
     fprintf(stderr, " -- genAllLegalMoves() -- \n");
     b = getDefaultBoard();
     RUN_TEST( "genAllLegalMoves from starting position",
@@ -408,7 +409,8 @@ int tests()
               myPrintPerft, perftDiff, free);
 */
 
-    fprintf(stderr, " -- Position 2 perft tests -- \n");
+    /* Position 2 Peft Tests */
+    fprintf(stderr, " -- Position 2 Perft Tests -- \n");
     loadFen(&b, "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ");
     RUN_TEST("Perft depth 1 - position 2", runPerftTest(&b, &pi, 1), PerftInfo*,
               &((PerftInfo){48, 8, 0, 2, 0, 0 ,0}),
@@ -420,6 +422,7 @@ int tests()
               &((PerftInfo){97862, 17102, 45, 3162, 0, 993 ,0}),
               myPrintPerft, perftDiff, free);
 
+    /* Puzzle Proficiency */
     fprintf(stderr, "-- Puzzle Proficiency --\n");
     loadFen(&b, "1k6/6R1/1K6/8/8/8/8/8 w - - 0 0");
     m = mcreate(0, IG7, IG8, ROOK, 0, _WHITE);

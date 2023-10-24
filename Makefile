@@ -15,10 +15,10 @@ PERFARGS = --magic
 .PHONY: all
 all: $(TARGET)
 
-# Using TOTALTHREADS is better when there are many memory lookups such as 
+# Using TOTALTHREADS is better when there are many memory lookups such as
 # when evaluating positions with mostly bishops, queens, and rooks while
 # CPUCORES is better when there is mostly computation and few memory lookups
-# such positions with many knights and pawns. In general, CPUCORES is probably 
+# such positions with many knights and pawns. In general, CPUCORES is probably
 # a better default but is subject to tweaking
 .PHONY: autothreads
 autothreads: clean
@@ -29,6 +29,10 @@ autothreads: clean
 .PHONY: single
 single: clean
 	$(MAKE) XFLAGS="-DNUM_THREADS=1";
+
+.PHONY: check
+check: debug
+	./$(TARGET) --test
 
 .PHONY: debug
 debug: CFLAGS += -g -DDEBUG -Wall -Wextra # -Wno-unused-parameter
