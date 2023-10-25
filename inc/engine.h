@@ -18,6 +18,6 @@ int8_t evaluateBoard(Board* board);
 void perftRun(Board* board, PerftInfo* pi, uint8_t depth);
 void perftRunThreaded(Board* board, PerftInfo* pi, uint8_t depth);
 void printPerft(PerftInfo pi);
-int compare_move_weights(const void* one, const void* two);
+int compareMoveWeights(const void* one, const void* two);
 
 #endif

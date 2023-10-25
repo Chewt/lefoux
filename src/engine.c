@@ -57,7 +57,7 @@ int alphaBeta( Board* board, int8_t alpha, int8_t beta, int8_t depthleft ) {
     return alpha;
 }
 
-int compare_move_weights(const void* one, const void* two)
+int compareMoveWeights(const void* one, const void* two)
 {
     if (mgetweight((*(Move*)one)) > mgetweight((*(Move*)two)))
         return -1;
@@ -106,7 +106,7 @@ Move findBestMove(Board* board, uint8_t depth)
         }
     }
     // Sort the moves so we can find the best one!
-    qsort(moves, numMoves, sizeof(Move), compare_move_weights);
+    qsort(moves, numMoves, sizeof(Move), compareMoveWeights);
     Move bestMove = 0;
     if (numMoves) bestMove = moves[0];
     for (i = 0; i < numMoves; ++i)

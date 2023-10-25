@@ -174,7 +174,7 @@ int go(Board* board, char* command)
     // Don't spawn task with only 1 thread since it won't get picked up
     // and will hang
     #if NUM_THREADS > 1
-    #pragma omp task untied 
+    #pragma omp task untied
     #endif
     {
         // This section is basically the guts of findBestMove
@@ -193,7 +193,7 @@ int go(Board* board, char* command)
                 g_state.bestMove = moves[i];
         }
         g_state.flags |= UCI_STOP;
-        qsort(moves, i, sizeof(Move), compare_move_weights);
+        qsort(moves, i, sizeof(Move), compareMoveWeights);
         if (numMoves) g_state.bestMove = moves[0];
         for (i = 0; i < numMoves; ++i)
         {
