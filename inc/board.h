@@ -145,7 +145,8 @@ typedef enum {
  *   bits are file, upper 3 rank
  * - Piece is the type of piece that is moving
  * - Color is the color of the piece that is moving
- * - Promote is the piece that a pawn will promote to
+ * - Promote is the piece that a pawn will promote to. Use PAWN when there is 
+ *   no promotion
  *****************************************************************************/
 typedef uint32_t Move;
 
@@ -153,7 +154,7 @@ typedef uint32_t Move;
 #define mgetweight(x) ((int8_t)(0xFF & (x >> 19)))
 
 // Returns a move with the weight set
-#define msetweight(m, v) ((Move)(m | ((0xFF & v) << 19)))
+#define msetweight(m, v) ((Move)((m & 0x7FFFF) | ((0xFF & v) << 19)))
 
 // Convert source or destination index to bitboard
 #define indextobb(x)  ((uint64_t)(0x1UL << x))
@@ -185,6 +186,22 @@ typedef uint32_t Move;
 // Extract previous board info
 #define mgetprevinfo(x)  ((uint16_t)((x >> 22) & 0x1ff))
 
+/*
+ * @param lead The leading bits in the move. Could be weight or undo info
+ * @param src The index of the source square
+ * @param dst The index of the destination square
+ * @param piece The type of piece that is moving
+ * @param promote The piece a pawn is promoting to. Use PAWN when there 
+ * is no promotion
+ * @param color The color to move. Use _WHITE and _BLACK (notice underscores)
+ */
+inline Move mcreate(int lead, uint8_t src, uint8_t dst, uint8_t piece, 
+                    uint8_t promote, uint8_t color) 
+{
+    return ( (lead << 19)|((src & 0x3f) << 13)|((dst & 0x3f) << 7)| 
+             ((piece & 0x7) << 4)|((promote & 0x7) << 1)|(color & 1));
+}
+
 extern const uint64_t RDIAG;
 extern const uint64_t LDIAG;
 extern const uint64_t VERT;
@@ -199,14 +216,12 @@ extern const uint64_t FILELIST[8];
 extern const uint64_t RANK[8];
 
 /*
- * magicLookupBishop
  * @param occupancy a bitboard of all of the pieces
  * @param square the square the attacking bishop is attacking from
  * @return bitboard of all attacks that bishop can make
  */
 uint64_t magicLookupBishop(uint64_t occupancy, enumIndexSquare square);
 /*
- * magicLookupRook
  * @param occupancy a bitboard of all of the pieces
  * @param square the square the attacking rook is attacking from
  * @return bitboard of all attacks that rook can make
@@ -214,7 +229,6 @@ uint64_t magicLookupBishop(uint64_t occupancy, enumIndexSquare square);
 uint64_t magicLookupRook(uint64_t occupancy, enumIndexSquare square);
 
 /*
- * getMoves
  * @param type the type of piece in parameter pieces
  * @param pieces a bitboard of all of the friendly pieces of the type specified
  *   in parameter type
@@ -225,13 +239,11 @@ uint64_t magicLookupRook(uint64_t occupancy, enumIndexSquare square);
 uint64_t getMoves(enumPiece type, uint64_t pieces, uint64_t friends, uint64_t foes);
 
 /*
- * printBitboard
  * @param bb a bitboard to print to stdout
  */
 void printBitboard(uint64_t bb);
 
 /*
- * genAllLegalMoves
  * @param board a pointer to a Board struct
  * @param moves a pointer to a preallocated array of type Move
  * @return number of moves in the array
@@ -239,20 +251,18 @@ void printBitboard(uint64_t bb);
 int8_t genAllLegalMoves(Board *board, Move *moves);
 
 /*
- * boardMove
  * @param board a pointer to a Board struct
  * @param move a Move to make on the board
+ * @return a move that can be used with undoMove to undo the move
  */
-uint16_t boardMove(Board *board, Move move);
+Move boardMove(Board *board, Move move);
 
 /*
- * getDefaultBoard
  * @return A Board initialized to untouched chess board
  */
 Board getDefaultBoard();
 
 /*
- * printBoardInfo
  * @param info the info section of a Board struct
  */
 void printBoardInfo(uint16_t info);
@@ -267,24 +277,60 @@ void printBoard(Board *board);
  */
 void printMove(Move move);
 
-/* TODO Stuff
+/*
+ * @param move move to print in SAN
+ */
+void printMoveSAN(Move move);
+
+/* 
+ * @brief Generates an attack map for a given piece type on a given square.
+ * This attack map considers other pieces that may block a move.
+ * @param board the board to generate the attack map from
+ * @param pieceType the type of piece to get the attack map for
+ * @param color the color to get the attack map for
+ * @param square the square that the piece is on
+ * @return a bitboard with all of the attacks for the given piece
  */
 uint64_t genPieceAttackMap(Board* board, int pieceType, int color, int square);
 
-/* TODO Stuff
+/*
+ * @param board the board to undo the move on
+ * @param move an "undo move" to undo. Undo moves use the upper bits to store
+ * the previous board info and a taken piece instead of the move's weight.
  */
 void undoMove(Board* board, Move move);
 
-/* TODO Stuff
+/*
+ * @param board the board to generate the attack maps for
+ * @param color the color of pieces to generate attack maps for.
+ * @return a bitboard with every attack for the given color
  */
 uint64_t genAllAttackMap(Board* board, int color);
 
-/* TODO Stuff
+/*
+ * @param board the board to load fen data into
+ * @param fen a string in Forsyth-Edwards Notation, see
+ * https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation
+ * @return the number of characters read from the fen string
  */
 int loadFen(Board* board, char* fen);
 
-/* TODO Stuff
+/*
+ * @param board the board to print the fen for, printed to stderr
  */
 void printFen(Board* board);
+
+/*
+ * @param board board to determine the piece type from
+ * @param movestr string to be parsed, should be in Long Algebraic Notation
+ * @return move generated by movestr. Not an undo move
+ */
+Move parseLANMove(Board *board, char *movestr);
+
+/*
+ * @param s string that has at least 6 characters allocated (including nullchar)
+ * @param move move to format as Long Algebraic Notation into s
+ */
+void sprintLANMove(char *s, Move move);
 
 #endif /* end of include guard: BOARD_H */

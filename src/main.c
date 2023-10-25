@@ -10,9 +10,8 @@
 #include "magic.h"
 #include "uci.h"
 
-#ifndef NUM_THREADS
-#define NUM_THREADS 1
-#endif
+/* Global variable across all files that include uci.h */
+UciState g_state = { 0 };
 
 /* argp struct */
 struct flags {
@@ -35,9 +34,14 @@ static int parse_opt (int key, char *arg, struct argp_state *state)
             memcpy(flags->fen, arg, strlen(arg));
             break;
         case 500:
-            // Program should return non-zero if a test fails
+            #pragma omp parallel
+            #pragma omp single
             result = tests();
+            // Program should return non-zero if a test fails
             if (result) exit(result);
+            // This line always exit after a test, comment to exit only after
+            // a failure
+            exit(result);
             break;
         case 501:
             exit(computeMagic());
@@ -47,9 +51,11 @@ static int parse_opt (int key, char *arg, struct argp_state *state)
 
 int main(int argc, char** argv)
 {
+   /* Lefoux cli preamble */
 #ifdef _OPENMP
     fprintf( stderr, "OpenMP is supported -- version = %d\n", _OPENMP );
     fprintf( stderr, "NUM_THREADS = %d\n", NUM_THREADS);
+    fprintf( stderr, "Lefoux " LEFOUX_VERSION "\n");
 #else
     fprintf( stderr, "No OpenMP support!\n" );
     return 1;
@@ -59,6 +65,7 @@ int main(int argc, char** argv)
 
     /* Command line args */
     struct flags flags;
+    flags.fen[0] = 0;
     struct argp_option options[] = {
         {"fen", 'f', "STRING", 0, "start board with position", 0},
         {"test", 500, 0, 0, "Run unit tests", 0},
@@ -73,13 +80,16 @@ int main(int argc, char** argv)
         exit(-1);
     }
 
-    // TESTING
-    printf("%s\n", flags.fen);
-
     FILE* input = fdopen(0, "r");
 
-    Board board;
+    Board board = getDefaultBoard();
+    g_state.flags = 0;
+
     int running = 1;
+    // This directive enables parallelism
+    #pragma omp parallel
+    // This directive says this while loop is handled by only one thread
+    #pragma omp single
     while (running)
     {
         char* command = malloc(COMMAND_LIMIT);

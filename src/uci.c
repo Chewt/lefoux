@@ -7,6 +7,7 @@
 #include "board.h"
 #include "engine.h"
 #include "timer.h"
+#include "bitHelpers.h"
 
 /*******************************************************************************
  *
@@ -24,15 +25,19 @@ int isready(Board* board, char* command)
 {
     char* s = "readyok\n";
     if (write(1, s, strlen(s)) == -1)
-        fprintf(stderr, "WHAT?!? there was an error\n");
+        fprintf(stderr, "Error writing to stdout");
     return 1;
 }
 
 int uci(Board* board, char* command)
 {
-    char* s = "readyok\n";
+    char *s = {
+        "id name Lefoux " LEFOUX_VERSION "\n"
+        "id author Hayden Johnson and Zachary Gorman\n"
+        "uciok\n"
+    };
     if (write(1, s, strlen(s)) == -1)
-        fprintf(stderr, "WHAT?!? there was an error\n");
+        fprintf(stderr, "Error writing to stdout");
     return 1;
 }
 
@@ -59,29 +64,175 @@ int position(Board* board, char* command)
         Board b = getDefaultBoard();
         memcpy(board, &b, sizeof(Board));
     } else if (token) {
-        fprintf(stderr, "Unknown postion type: %s\n", token);
+        fprintf(stderr, "Unknown postion type, must be of [fen | startpos]: "
+                        "%s\n", token);
         return 1;
     } else {
-        fprintf(stderr, "No position type given. Use: position <type> <args>\n");
+        fprintf(stderr, "No position type given. Use: position [fen | startpos]"
+                        " moves ....\n");
         return 1;
     }
     /* Process moves after position is set */
+    /* Token should be "moves" */
+    token = strtok_r(NULL, " \n", &saveptr);
+    /* Now each token should be a LAN move */
+    while ( (token = strtok_r(NULL, " \n", &saveptr)) )
+    {
+        Move m = parseLANMove(board, token);
+        if (!m) continue;
+        m = boardMove(board, m);
+    }
     return 1;
 }
 
 int go(Board* board, char* command)
 {
-    char* s = "readyok\n";
-    if (write(1, s, strlen(s)) == -1)
-        fprintf(stderr, "WHAT?!? there was an error\n");
+    char *saveptr;
+    /* token should be "go" */
+    char *token = strtok_r(command, " \n", &saveptr);
+    /* parameters to tweak with subcommands */
+    Move moves[MAX_MOVES_PER_POSITION];
+    int numMoves = 0;
+    int depth = 5;
+    int ponder = 0;
+    int maxTime = 0;
+    /* go subcommand */
+    while ( (token = strtok_r(NULL, " \n", &saveptr)) )
+    {
+        if (token && !strcmp(token, "searchmoves"))
+        {
+            while ( (token = strtok_r(NULL, " \n", &saveptr)) )
+            {
+                moves[numMoves] = parseLANMove(board, token);
+                if (!moves[numMoves]) break;
+                numMoves++;
+            }
+        }
+        if (token && !strcmp(token, "ponder"))
+        {
+            ponder = 1;
+        }
+        if (token && !strcmp(token, "wtime"))
+        {
+            /* token is number of ms left on the clock for white */
+            token = strtok_r(NULL, " \n", &saveptr);
+        }
+        if (token && !strcmp(token, "btime"))
+        {
+            /* token is number of ms left on the clock for black */
+            token = strtok_r(NULL, " \n", &saveptr);
+        }
+        if (token && !strcmp(token, "winc"))
+        {
+            /* token is white's increment per move in ms if x > 0 */
+            token = strtok_r(NULL, " \n", &saveptr);
+        }
+        if (token && !strcmp(token, "binc"))
+        {
+            /* token is black's increment per move in ms if x > 0 */
+            token = strtok_r(NULL, " \n", &saveptr);
+        }
+        if (token && !strcmp(token, "movestogo"))
+        {
+            /* token is the number of moves until next time control */
+            token = strtok_r(NULL, " \n", &saveptr);
+        }
+        if (token && !strcmp(token, "depth"))
+        {
+            /* token is the number of plies to search */
+            token = strtok_r(NULL, " \n", &saveptr);
+            depth = atoi(token);
+        }
+        if (token && !strcmp(token, "nodes"))
+        {
+            /* token is the number of nodes to search */
+            token = strtok_r(NULL, " \n", &saveptr);
+            depth = atoi(token);
+            // An estimate conversion from number of nodes to ply
+            depth = bitScanReverse(depth);
+        }
+        if (token && !strcmp(token, "mate"))
+        {
+            /* token is the number of moves to find a mate */
+            token = strtok_r(NULL, " \n", &saveptr);
+            depth = atoi(token);
+        }
+        if (token && !strcmp(token, "movetime"))
+        {
+            /* token is the amount of time to search in ms */
+            token = strtok_r(NULL, " \n", &saveptr);
+            maxTime = atoi(token);
+        }
+        if (token && !strcmp(token, "infinite"))
+        {
+            /* Search until the "stop" command */
+            depth = 0xff;
+        }
+    }
+    g_state.flags &= ~UCI_STOP;
+    // Task to start searching
+    // Don't spawn task with only 1 thread since it won't get picked up
+    // and will hang
+    #if NUM_THREADS > 1
+    #pragma omp task untied
+    #endif
+    {
+        // This section is basically the guts of findBestMove
+        g_state.bestMove = msetweight(0, -127);
+        if (!numMoves) g_state.bestMove = findBestMove(board, depth);
+        int i;
+        for (i=0; i<numMoves; i++)
+        {
+            Move undoM = boardMove(board, moves[i]);
+            moves[i] = msetweight(moves[i],
+                    mgetweight(findBestMove(board, depth)));
+            undoMove(board, undoM);
+            if (g_state.flags & UCI_STOP) break;
+            // Update global state in case this is interrupted
+            if (mgetweight(moves[i]) > mgetweight(g_state.bestMove))
+                g_state.bestMove = moves[i];
+        }
+        g_state.flags |= UCI_STOP;
+        qsort(moves, i, sizeof(Move), compareMoveWeights);
+        if (numMoves) g_state.bestMove = moves[0];
+        for (i = 0; i < numMoves; ++i)
+        {
+            if (mgetweight(moves[i]) != mgetweight(g_state.bestMove))
+                break;
+        }
+        // If there are many bestMoves, pick one randomly
+        if (i - 1 > 0)
+            g_state.bestMove = moves[rand() % (i - 1)];
+        /* Deliver bestMove */
+        if (!ponder) {
+            char s[] = {"bestmove a1h8q\n"};
+            sprintLANMove(s + 9, g_state.bestMove);
+            int n = strlen(s);
+            s[n] = '\n';
+            if (write(1, s, strlen(s)) == -1)
+                fprintf(stderr, "Error writing to stdout");
+        }
+    }
+    // Task to time the search
+    // Don't spawn task with fewer than 3 threads, otherwise timer starts
+    // after search is finished
+    #if NUM_THREADS >= 3
+    if (maxTime)
+    {
+        #pragma omp task untied
+        {
+            usleep(maxTime * 1000);
+            g_state.flags |= UCI_STOP;
+        }
+    }
+    #endif
+
     return 1;
 }
 
 int debug(Board* board, char* command)
 {
-    char* s = "readyok\n";
-    if (write(1, s, strlen(s)) == -1)
-        fprintf(stderr, "WHAT?!? there was an error\n");
+    g_state.flags |= UCI_DEBUG;
     return 1;
 }
 
@@ -89,23 +240,26 @@ int setoption(Board* board, char* command)
 {
     char* s = "readyok\n";
     if (write(1, s, strlen(s)) == -1)
-        fprintf(stderr, "WHAT?!? there was an error\n");
+        fprintf(stderr, "Error writing to stdout");
     return 1;
 }
 
 int ucinewgame(Board* board, char* command)
 {
-    char* s = "readyok\n";
-    if (write(1, s, strlen(s)) == -1)
-        fprintf(stderr, "WHAT?!? there was an error\n");
+    *board = getDefaultBoard();
     return 1;
 }
 
 int stop(Board* board, char* command)
 {
-    char* s = "readyok\n";
+    g_state.flags |= UCI_STOP;
+    char s[] = {"bestmove a1h8q\n"};
+    sprintLANMove(s + 9, g_state.bestMove);
+    int n = strlen(s);
+    s[n] = '\n';
+    // printMove(g_state.bestMove);
     if (write(1, s, strlen(s)) == -1)
-        fprintf(stderr, "WHAT?!? there was an error\n");
+        fprintf(stderr, "Error writing to stdout");
     return 1;
 }
 
@@ -113,9 +267,11 @@ int ponderhit(Board* board, char* command)
 {
     char* s = "readyok\n";
     if (write(1, s, strlen(s)) == -1)
-        fprintf(stderr, "WHAT?!? there was an error\n");
+        fprintf(stderr, "Error writing to stdout");
     return 1;
 }
+
+int uciquit(Board *board, char *command) { return 0; }
 
 /* Non-uci commands */
 
@@ -149,9 +305,13 @@ int perft(Board* board, char* command)
     Timer t;
     PerftInfo p = {0};
     StartTimer(&t);
-    perftRun(board, &p, depth);
+    perftRunThreaded(board, &p, depth);
     StopTimer(&t);
+    #ifdef CSV
+    printf("%.6f,", t.time_taken);
+    #else
     printf("Took %.6f seconds\n", t.time_taken);
+    #endif
     printPerft(p);
     return 1;
 }
@@ -178,6 +338,9 @@ Command allcommands[] = {
     {"ucinewgame", ucinewgame},
     {"stop", stop},
     {"ponderhit", ponderhit},
+    {"register", isready},
+    {"ucinewgame", isready},
+    {"quit", uciquit},
     // Non-uci commands
     {"printboard", printboard},
     {"perft", perft},
@@ -195,11 +358,21 @@ int ProcessCommand(Board* board, char* command)
     Command* c;
     for (c = allcommands; c->match[0] != 0; c++)
     {
-        if (!strcmp("quit", token))
-            return 0;
         if (!strcmp(c->match, token))
             return c->func(board, command_copy);
     }
     fprintf(stderr, "Unknown command: %s\n", token);
     return 1;
+}
+
+void uciInfo(char *info)
+{
+    char* s = "info string ";
+    char* n = "\n";
+    if (write(1, s, strlen(s)) == -1)
+        fprintf(stderr, "Error writing to stdout");
+    if (write(1, info, strlen(info)) == -1)
+        fprintf(stderr, "Error writing to stdout");
+    if (write(1, n, strlen(n)) == -1)
+        fprintf(stderr, "Error writing to stdout");
 }
