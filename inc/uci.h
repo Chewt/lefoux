@@ -1,7 +1,11 @@
 #ifndef UCI_H
 #define UCI_H
 
+#include <string.h>
+
 #include "board.h"
+
+#define LEFOUX_VERSION "0.0.1"
 
 /* The max size of the command buffer, we can increase if need be */
 #define COMMAND_LIMIT 2048

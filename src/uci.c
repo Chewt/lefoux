@@ -32,7 +32,7 @@ int isready(Board* board, char* command)
 int uci(Board* board, char* command)
 {
     char *s = {
-        "id name Lefoux\n"
+        "id name Lefoux " LEFOUX_VERSION "\n"
         "id author Hayden Johnson and Zachary Gorman\n"
         "uciok\n"
     };
@@ -375,9 +375,4 @@ void uciInfo(char *info)
         fprintf(stderr, "Error writing to stdout");
     if (write(1, n, strlen(n)) == -1)
         fprintf(stderr, "Error writing to stdout");
-}
-
-void uciDebug(char *info)
-{
-    if (g_state.flags & UCI_DEBUG) uciInfo(info);
 }

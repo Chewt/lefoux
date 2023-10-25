@@ -51,9 +51,11 @@ static int parse_opt (int key, char *arg, struct argp_state *state)
 
 int main(int argc, char** argv)
 {
+   /* Lefoux cli preamble */
 #ifdef _OPENMP
     fprintf( stderr, "OpenMP is supported -- version = %d\n", _OPENMP );
     fprintf( stderr, "NUM_THREADS = %d\n", NUM_THREADS);
+    fprintf( stderr, "Lefoux " LEFOUX_VERSION "\n");
 #else
     fprintf( stderr, "No OpenMP support!\n" );
     return 1;
