@@ -403,7 +403,7 @@ int8_t genAllLegalMoves(Board *board, Move *moves)
 {
     uint64_t piece;
     enumIndexSquare square;
-    int movecount = 0;
+    uint8_t movecount = 0;
     int color_to_move = (bgetcol(board->info)) ? BLACK : WHITE;
     uint64_t foes = 0;
     for (int i = 0; i < 6; ++i)

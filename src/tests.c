@@ -504,33 +504,33 @@ int tests()
     RUN_TEST("Puzzle 5b: SACK THE ROOOOKKKKK!!!", findBestMove(&b, 5), Move, m,
         printMoveSAN, moveDiff, noFree);
 
-    /* too long?
+    /* too long :(
     loadFen(&b, "kr6/1p2Rp2/pn4p1/1N5p/7P/3Q4/PPP2qP1/1K6 w - - 0 1");
     m = mcreate(0, IB5, IC7, KNIGHT, 0, _WHITE);
     RUN_TEST("Puzzle 6w: Opening the door", findBestMove(&b, 7), Move, m,
         printMoveSAN, moveDiff, noFree);
-   */
+    */
 
     /* TODO convert to black test
     loadFen(&b, "kr6/1p2Rp2/pn4p1/1N5p/7P/3Q4/PPP2qP1/1K6 w - - 0 1");
     m = mcreate(0, IB5, IC7, KNIGHT, 0, _WHITE);
     RUN_TEST("Puzzle 6w: Opening the door", findBestMove(&b, 7), Move, m,
         printMoveSAN, moveDiff, noFree);
-   */
+    */
 
     /* Wayy too long
     loadFen(&b, "r1b2rk1/p3bp1p/4pp1Q/8/1p1qNp2/1n4N1/PPP3PP/R4R1K w - - 0 1");
     m = mcreate(0, IG3, IH5, KNIGHT, 0, _WHITE);
     RUN_TEST("Puzzle 6w: Dislodge the defender: oh boy it's hard", findBestMove(&b, 9), Move, m,
         printMoveSAN, moveDiff, noFree);
-   */
+    */
 
     /* TODO convert to black test
     loadFen(&b, "r1b2rk1/p3bp1p/4pp1Q/8/1p1qNp2/1n4N1/PPP3PP/R4R1K w - - 0 1");
     m = mcreate(0, IG3, IH5, KNIGHT, 0, _WHITE);
     RUN_TEST("Puzzle 6w: Dislodge the defender: oh boy it's hard", findBestMove(&b, 9), Move, m,
         printMoveSAN, moveDiff, noFree);
-     */
+    */
 
     /* Print output */
     fprintf(stderr, "Tests passed: %s%d%s of %d\n",

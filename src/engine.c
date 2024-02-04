@@ -50,9 +50,9 @@ int alphaBeta( Board* board, int8_t alpha, int8_t beta, int8_t depthleft ) {
         int8_t weight = -alphaBeta(board, -beta, -alpha, depthleft - 1 );
         undoMove(board, undo);
         if( weight >= beta )
-            return beta;   // fail hard beta-cutoff
+            return beta;
         if( weight > alpha )
-            alpha = weight; // alpha acts like max in MiniMax
+            alpha = weight;
     }
     return alpha;
 }
@@ -78,10 +78,10 @@ Move findBestMove(Board* board, uint8_t depth)
     // MAX_MOVES_PER_POSITION*sizeof(Move) = 218 * 4 = 872 bytes
     Move moves[MAX_MOVES_PER_POSITION];
     numMoves = genAllLegalMoves(board, moves);
-    int8_t alpha = -126;
-    int8_t beta = 127;
     for (int curdepth=1; curdepth <= depth; curdepth++) {
         // Generate tasks for this loop to be parallelized
+        int8_t alpha = -126;
+        int8_t beta = 127;
         #pragma omp taskloop untied default(shared)
         for (i=0; i<numMoves; i++)
         {
@@ -91,12 +91,13 @@ Move findBestMove(Board* board, uint8_t depth)
             int8_t weight = -alphaBeta(&boards[me], -beta, -(alpha - 1), curdepth);
             moves[i] = msetweight(moves[i], weight);
             undoMove(&boards[me], undoM);
-            // Update alpha if a better weight was found. Critical to avoid race
-            // conditions
+            // Update alpha if a better move was found at this depth. Critical
+            // to avoid race conditions with setting alpha and g_state
             #pragma omp critical
-            if (weight > alpha) {
+            if (weight > alpha)
+            {
                 alpha = weight;
-                // Update global statet best move in case the search is interrupted
+                // Update global state in case search is interrupted
                 g_state.bestMove = moves[i];
             }
             // If UCI_STOP, cancel remaining tasks
