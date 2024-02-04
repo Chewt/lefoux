@@ -88,7 +88,7 @@ Move findBestMove(Board* board, uint8_t depth)
             int me = omp_get_thread_num();
             Move undoM = boardMove(&boards[me], moves[i]);
             // Update the move with its weight
-            int8_t weight = -alphaBeta(&boards[me], -beta, -(alpha - 1), depth);
+            int8_t weight = -alphaBeta(&boards[me], -beta, -(alpha - 1), curdepth);
             moves[i] = msetweight(moves[i], weight);
             undoMove(&boards[me], undoM);
             // Update alpha if a better weight was found. Critical to avoid race
