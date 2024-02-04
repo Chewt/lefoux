@@ -80,33 +80,35 @@ Move findBestMove(Board* board, uint8_t depth)
     numMoves = genAllLegalMoves(board, moves);
     int8_t alpha = -126;
     int8_t beta = 127;
-    // Generate tasks for this loop to be parallelized
-#pragma omp taskloop untied default(shared)
-    for (i=0; i<numMoves; i++)
-    {
-        int me = omp_get_thread_num();
-        Move undoM = boardMove(&boards[me], moves[i]);
-        // Update the move with its weight
-        int8_t weight = -alphaBeta(&boards[me], -beta, -(alpha - 1), depth);
-        moves[i] = msetweight(moves[i], weight);
-        undoMove(&boards[me], undoM);
-        // Update alpha if a better weight was found. Critical to avoid race
-        // conditions
-        #pragma omp critical
-        if (weight > alpha) {
-            alpha = weight;
-            // Update global statet best move in case the search is interrupted
-            g_state.bestMove = moves[i];
-        }
-        // If UCI_STOP, cancel remaining tasks
-        if (g_state.flags & UCI_STOP)
+    for (int curdepth=1; curdepth <= depth; curdepth++) {
+        // Generate tasks for this loop to be parallelized
+        #pragma omp taskloop untied default(shared)
+        for (i=0; i<numMoves; i++)
         {
-            #pragma omp cancel taskgroup
-            // Similar to break;
+            int me = omp_get_thread_num();
+            Move undoM = boardMove(&boards[me], moves[i]);
+            // Update the move with its weight
+            int8_t weight = -alphaBeta(&boards[me], -beta, -(alpha - 1), depth);
+            moves[i] = msetweight(moves[i], weight);
+            undoMove(&boards[me], undoM);
+            // Update alpha if a better weight was found. Critical to avoid race
+            // conditions
+            #pragma omp critical
+            if (weight > alpha) {
+                alpha = weight;
+                // Update global statet best move in case the search is interrupted
+                g_state.bestMove = moves[i];
+            }
+            // If UCI_STOP, cancel remaining tasks
+            if (g_state.flags & UCI_STOP)
+            {
+                #pragma omp cancel taskgroup
+                // Similar to break;
+            }
         }
+        // Sort the moves so we can find the best one!
+        qsort(moves, numMoves, sizeof(Move), compareMoveWeights);
     }
-    // Sort the moves so we can find the best one!
-    qsort(moves, numMoves, sizeof(Move), compareMoveWeights);
     Move bestMove = 0;
     if (numMoves) bestMove = moves[0];
     for (i = 0; i < numMoves; ++i)
