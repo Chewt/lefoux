@@ -320,6 +320,13 @@ int loadFen(Board* board, char* fen);
  */
 void printFen(Board* board);
 
+
+/*
+ * Reverse the colors in a fen string, including the orientation of the board
+ * and who's turn it is to play.
+ */
+void reverseFen(char* dest, char* fen);
+
 /*
  * @param board board to determine the piece type from
  * @param movestr string to be parsed, should be in Long Algebraic Notation

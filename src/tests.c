@@ -514,6 +514,15 @@ int tests()
     RUN_TEST("Puzzle 6b: Pawns can be important too!", findBestMove(&b, 5), Move, m,
         printMoveSAN, moveDiff, noFree);
 
+    /*
+    // This is a demonstration on how to use the reverseFen function.
+    char rFen[256];
+    reverseFen(rFen, "4r3/4n3/kP6/Pb1rR2P/5P2/4P1K1/1p3R2/8 w - - 0 101");
+    fprintf(stderr, "Original Fen: %s\nReversed Fen: %s\nExpected Fen: %s\n",
+            "4r3/4n3/kP6/Pb1rR2P/5P2/4P1K1/1p3R2/8 w - - 0 101", rFen,
+            "8/2r3P1/1k1p4/2p5/p2rR1Bp/6pK/3N4/3R4 b - - 0 101");
+    */
+
     /* too long :(
     loadFen(&b, "kr6/1p2Rp2/pn4p1/1N5p/7P/3Q4/PPP2qP1/1K6 w - - 0 1");
     m = mcreate(0, IB5, IC7, KNIGHT, 0, _WHITE);

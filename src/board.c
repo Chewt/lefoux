@@ -821,6 +821,52 @@ int loadFen(Board* board, char* fen)
     return token - fen_copy;
 }
 
+/*
+ * Reverse the colors in a fen string, including the orientation of the board
+ * and who's turn it is to play.
+ */
+void reverseFen(char* dest, char* fen) 
+{
+    // Initially copy the fen string into the dest buffer, and we will manipulate
+    // it from there.
+    int fenLength = strlen(fen) + 1;
+    memcpy(dest, fen, fenLength);
+    char *reversedMoves = malloc(fenLength + 1); // temp buffer
+
+    // Reverse moves
+    char *c = dest;
+    while (*(++c) != ' '); // seek to end of board layout
+    // Copy board layout in reverse order
+    int i;
+    for (i = 0; i < c - dest; i++)
+        reversedMoves[c - dest - 1 - i] = dest[i];
+    // Copy reversed layout back into dest fen buffer
+    for (i = 0; i < c - dest; i++)
+        dest[i] = reversedMoves[i];
+    free(reversedMoves);
+
+    // Swap colors
+    c = dest;
+    while (*c != ' ') 
+    {
+        if (*c >= 'a' && *c <= 'z') 
+        {
+            char newC = *c - 'a';
+            *c = newC + 'A';
+        } 
+        else if (*c >= 'A' && *c <= 'Z') 
+        {
+            char newC = *c - 'A';
+            *c = newC + 'a';
+        }
+        c++;
+    }
+
+    // Set opposite color's move to play
+    c++;
+    *c = (*c == 'b') ? 'w' : 'b';
+}
+
 void printFen(Board *board)
 {
     /* Piece placement */
