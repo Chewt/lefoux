@@ -504,6 +504,16 @@ int tests()
     RUN_TEST("Puzzle 5b: SACK THE ROOOOKKKKK!!!", findBestMove(&b, 5), Move, m,
         printMoveSAN, moveDiff, noFree);
 
+    loadFen(&b, "4r3/4n3/kP6/Pb1rR2P/5P2/4P1K1/1p3R2/8 w - - 0 101");
+    m = mcreate(0, IF2, IB2, ROOK, 0, _WHITE);
+    RUN_TEST("Puzzle 6w: Pawns can be important too!", findBestMove(&b, 5), Move, m,
+        printMoveSAN, moveDiff, noFree);
+
+    loadFen(&b, "8/2r3P1/1k1p4/2p5/p2rR1Bp/6pK/3N4/3R4 b - - 0 101");
+    m = mcreate(0, IC7, IG7, ROOK, 0, _BLACK);
+    RUN_TEST("Puzzle 6b: Pawns can be important too!", findBestMove(&b, 5), Move, m,
+        printMoveSAN, moveDiff, noFree);
+
     /* Print output */
     fprintf(stderr, "Tests passed: %s%d%s of %d\n",
             good, pass, clear, pass + fail);
