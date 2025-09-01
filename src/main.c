@@ -3,6 +3,7 @@
 #include <omp.h>
 #include <argp.h>
 #include <string.h>
+#include <time.h>
 
 #include "bitHelpers.h"
 #include "board.h"
@@ -61,6 +62,7 @@ int main(int argc, char** argv)
     return 1;
 #endif
 
+    srand(time(NULL));
     omp_set_num_threads(NUM_THREADS);
 
     /* Command line args */
