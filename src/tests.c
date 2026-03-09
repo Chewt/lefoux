@@ -55,6 +55,13 @@ PerftInfo* runPerftTest(Board *board, PerftInfo *pi, uint8_t depth)
     return pi;
 }
 
+PerftInfo* runPerftTestABPruning(Board *board, PerftInfo *pi, uint8_t depth)
+{
+    memset(pi, 0, sizeof(PerftInfo));
+    perftRunThreaded(board, pi, depth);
+    return pi;
+}
+
 PerftInfo* perftDiff(PerftInfo *check, PerftInfo *ref)
 {
     PerftInfo *diff = malloc(sizeof(PerftInfo));
@@ -67,6 +74,22 @@ PerftInfo* perftDiff(PerftInfo *check, PerftInfo *ref)
     diffFlag |= (diff->checks = ref->checks - check->checks) ? 1 : 0;
     diffFlag |= (diff->checkmates = ref->checkmates - check->checkmates) ? 1 : 0;
     if (diffFlag) return diff;
+    free(diff);
+    return NULL;
+}
+
+PerftInfo* perftDiffInfoOnly(PerftInfo *check, PerftInfo *ref)
+{
+    PerftInfo *diff = malloc(sizeof(PerftInfo));
+    int diffFlag = 0;
+    diffFlag |= (diff->nodes = ref->nodes - check->nodes) ? 1 : 0;
+    diffFlag |= (diff->captures = ref->captures - check->captures) ? 1 : 0;
+    diffFlag |= (diff->enpassants = ref->enpassants - check->enpassants) ? 1 : 0;
+    diffFlag |= (diff->castles = ref->castles - check->castles) ? 1 : 0;
+    diffFlag |= (diff->promotions = ref->promotions - check->promotions) ? 1 : 0;
+    diffFlag |= (diff->checks = ref->checks - check->checks) ? 1 : 0;
+    diffFlag |= (diff->checkmates = ref->checkmates - check->checkmates) ? 1 : 0;
+    printPerft(*diff);
     free(diff);
     return NULL;
 }
@@ -421,6 +444,49 @@ int tests()
     RUN_TEST("Perft depth 3 - position 2", runPerftTest(&b, &pi, 3), PerftInfo*,
               &((PerftInfo){97862, 17102, 45, 3162, 0, 993 ,0}),
               myPrintPerft, perftDiff, free);
+
+    /* Alpha-Beta Pruning tests */
+    fprintf(stderr, " -- Alpha-Beta Pruning Perft Tests -- \n");
+    b = getDefaultBoard();
+    RUN_TEST("Perft w/ AB Pruning depth 1", runPerftTestABPruning(&b, &pi, 1), PerftInfo*,
+              &((PerftInfo){20, 0, 0, 0, 0, 0 ,0}),
+              myPrintPerft, perftDiffInfoOnly, free);
+    RUN_TEST("Perft w/ AB Pruning depth 2", runPerftTestABPruning(&b, &pi, 2), PerftInfo*,
+              &((PerftInfo){400, 0, 0, 0, 0, 0 ,0}),
+              myPrintPerft, perftDiffInfoOnly, free);
+    RUN_TEST("Perft w/ AB Pruning depth 3", runPerftTestABPruning(&b, &pi, 3), PerftInfo*,
+              &((PerftInfo){8902, 34, 0, 0, 0, 12 ,0}),
+              myPrintPerft, perftDiffInfoOnly, free);
+    RUN_TEST("Perft w/ AB Pruning depth 4", runPerftTestABPruning(&b, &pi, 4), PerftInfo*,
+              &((PerftInfo){197281, 1576, 0, 0, 0, 469 ,0}),
+              myPrintPerft, perftDiffInfoOnly, free);
+    RUN_TEST("Perft w/ AB Pruning depth 5", runPerftTestABPruning(&b, &pi, 5), PerftInfo*,
+              &((PerftInfo){4865609, 82719, 258, 0, 0, 27351 ,0}),
+              myPrintPerft, perftDiffInfoOnly, free);
+
+    fprintf(stderr, " -- AB Pruning Position 2 Perft Tests -- \n");
+    loadFen(&b, "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ");
+    RUN_TEST("AB Pruning Perft depth 1 - position 2", runPerftTestABPruning(&b, &pi, 1), PerftInfo*,
+              &((PerftInfo){48, 8, 0, 2, 0, 0 ,0}),
+              myPrintPerft, perftDiffInfoOnly, free);
+    RUN_TEST("AB Pruning Perft depth 2 - position 2", runPerftTestABPruning(&b, &pi, 2), PerftInfo*,
+              &((PerftInfo){2039, 351, 1, 91, 0, 3 ,0}),
+              myPrintPerft, perftDiffInfoOnly, free);
+    RUN_TEST("AB Pruning Perft depth 3 - position 2", runPerftTestABPruning(&b, &pi, 3), PerftInfo*,
+              &((PerftInfo){97862, 17102, 45, 3162, 0, 993 ,0}),
+              myPrintPerft, perftDiffInfoOnly, free);
+
+    fprintf(stderr, " -- AB Pruning Puzzle 5 Perft Tests -- \n");
+    loadFen(&b, "4Q3/r4rkp/2p3p1/3p4/3P1P2/8/pq3PK1/3R3R w - - 8 33");
+    PerftInfo refPi;
+    RUN_TEST("AB Pruning Perft depth 5 - Puzzle 5 whit", runPerftTestABPruning(&b, &pi, 5), PerftInfo*,
+              runPerftTest(&b, &refPi, 5),
+              myPrintPerft, perftDiffInfoOnly, free);
+    loadFen(&b, "r3r3/1kp3QP/8/2p1p3/4P3/1P3P2/PKR4R/3q4 b - - 0 1");
+    RUN_TEST("AB Pruning Perft depth 5 - Puzzle 5 black", runPerftTestABPruning(&b, &pi, 5), PerftInfo*,
+              runPerftTest(&b, &refPi, 5),
+              myPrintPerft, perftDiffInfoOnly, free);
+
 
     /* Puzzle Proficiency */
     fprintf(stderr, "-- Puzzle Proficiency --\n");

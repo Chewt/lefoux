@@ -293,3 +293,156 @@ void printPerft(PerftInfo pi)
            pi.checkmates);
     #endif
 }
+
+int alphaBetaPerft( Board* board, int8_t alpha, int8_t beta, int8_t depthleft, PerftInfo* pi ) {
+    Move moves[MAX_MOVES_PER_POSITION];
+    uint8_t numMoves = genAllLegalMoves(board, moves);
+    int i;
+
+    if ( depthleft == 0 )
+    {
+        // Nodes
+        pi->nodes += numMoves;
+
+        int enemyColor = (bgetcol(board->info) == _WHITE) ? BLACK : WHITE;
+        uint64_t enemyPieces = 0UL;
+        for (i = 0; i < 6; ++i)
+            enemyPieces |= board->pieces[enemyColor + i];
+
+        for (i = 0; i < numMoves; ++i)
+        {
+
+            if ((mgetpiece(moves[i]) == PAWN) && (mgetsrc(moves[i]) == ID5))
+            {
+                //printBoard(board);
+                //printMove(moves[i]);
+            }
+
+            // Captures
+            if (mgetdstbb(moves[i]) & enemyPieces)
+            {
+                // printMove(moves[i]);
+                pi->captures++;
+            }
+
+            // En passants
+            if ((mgetpiece(moves[i]) == PAWN) && bgetenp(board->info)
+                && (mgetdst(moves[i]) == bgetenpsquare(board->info)))
+            {
+                pi->enpassants++;
+                pi->captures++;
+            }
+
+            // Checks
+            boardMove(board, moves[i]);
+
+            // TESTS
+            //printBoard(board);
+            //printMove(moves[i]);
+            //printFen(board);
+
+            uint64_t attack_map = genAllAttackMap(board, enemyColor ^ BLACK);
+            if (attack_map & board->pieces[enemyColor + KING])
+            {
+                //printFen(board);
+                pi->checks++;
+            }
+            undoMove(board, moves[i]);
+
+            // Castles
+            if (mgetpiece(moves[i]) == KING)
+            {
+                if (bgetcol(board->info) == _WHITE)
+                {
+                    if ((bgetcas(board->info) & 0x8) &&
+                            mgetdst(moves[i]) == IC1)
+                        pi->castles++;
+                    else if ((bgetcas(board->info) & 0x4) &&
+                            mgetdst(moves[i]) == IG1)
+                        pi->castles++;
+                }
+                else if (bgetcol(board->info) == _BLACK)
+                {
+                    if ((bgetcas(board->info) & 0x2) &&
+                            mgetdst(moves[i]) == IC8)
+                        pi->castles++;
+                    else if ((bgetcas(board->info) & 0x1) &&
+                            mgetdst(moves[i]) == IG8)
+                        pi->castles++;
+                }
+            }
+        }
+        return evaluateBoard(board);
+    }
+    for (i = 0; i < numMoves; ++i) {
+        Move undo = boardMove(board, moves[i]);
+        int8_t weight = -alphaBetaPerft(board, -beta, -alpha, depthleft - 1, pi );
+        undoMove(board, undo);
+        if( weight >= beta )
+            return beta;
+        if( weight > alpha )
+            alpha = weight;
+    }
+    return alpha;
+}
+
+void perftRunThreadedABPrune(Board* board, PerftInfo* pi, uint8_t depth)
+{
+    // Assumes MAX_MOVES_PER_POSITION < 256
+    uint8_t i;
+    uint8_t numMoves;
+
+    // Setup independent variables for each thread
+    Board boards[NUM_THREADS];
+    PerftInfo pilist[NUM_THREADS] = {0};
+    for (i=0; i<NUM_THREADS; i++) memcpy(&boards[i], board, sizeof(Board));
+    // MAX_MOVES_PER_POSITION*sizeof(Move) = 218 * 4 = 872 bytes
+    Move moves[MAX_MOVES_PER_POSITION];
+    numMoves = genAllLegalMoves(board, moves);
+    for (int curdepth=1; curdepth <= depth; curdepth++) {
+        // Generate tasks for this loop to be parallelized
+        int8_t alpha = -125;
+        int8_t beta = 126;
+        #pragma omp taskloop untied default(shared)
+        for (i=0; i<numMoves; i++)
+        {
+            int me = omp_get_thread_num();
+            Move undoM = boardMove(&boards[me], moves[i]);
+            // Update the move with its weight
+            int8_t weight = -alphaBetaPerft(&boards[me], -beta, -(alpha - 1), curdepth, &pilist[me]);
+            moves[i] = msetweight(moves[i], weight);
+            undoMove(&boards[me], undoM);
+            // Update alpha if a better move was found at this depth. Critical
+            // to avoid race conditions with setting alpha and g_state
+            #pragma omp critical
+            if (weight > alpha)
+            {
+                alpha = weight;
+                // Update global state in case search is interrupted
+                g_state.bestMove = moves[i];
+            }
+            // If UCI_STOP, cancel remaining tasks
+            if (g_state.flags & UCI_STOP)
+            {
+                #pragma omp cancel taskgroup
+                // Similar to break;
+            }
+        }
+        // Sort the moves so we can find the best one!
+        qsort(moves, numMoves, sizeof(Move), compareMoveWeights);
+    }
+
+    // Combine pi results
+    for (i=0; i<NUM_THREADS; i++)
+    {
+        pi->nodes += pilist[i].nodes;
+        pi->captures += pilist[i].captures;
+        pi->enpassants += pilist[i].enpassants;
+        pi->castles += pilist[i].castles;
+        pi->promotions += pilist[i].promotions;
+        pi->checks += pilist[i].checks;
+        pi->checkmates += pilist[i].checkmates;
+    }
+    return;
+}
+
