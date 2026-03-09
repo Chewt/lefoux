@@ -114,6 +114,7 @@ Move findBestMove(Board* board, uint8_t depth)
     if (numMoves) bestMove = moves[0];
     for (i = 0; i < numMoves; ++i)
     {
+        printMove(moves[i]);
         if (mgetweight(moves[i]) != mgetweight(bestMove))
             break;
     }
