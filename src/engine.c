@@ -54,7 +54,7 @@ int attackLines( Board* board ) {
         if( weight > maxWeight )
             maxWeight = weight;
     }
-    if ( maxWeight == -126 ) return evaluateBoard(board);
+    if ( maxWeight == -126 ) return -evaluateBoard(board);
     return maxWeight;
 }
 
@@ -112,9 +112,10 @@ Move findBestMove(Board* board, uint8_t depth)
         captureMoves++;
     }
     qsort(moves, captureMoves, sizeof(Move), compareMoveWeights);
+    int8_t maxCaptureWeight = mgetweight( moves[0] );
     for (int curdepth=1; curdepth <= depth; curdepth++) {
         // Generate tasks for this loop to be parallelized
-        int8_t alpha = -126;
+        int8_t alpha = maxCaptureWeight;
         int8_t beta = 127;
         #pragma omp taskloop untied default(shared)
         for (i=0; i<numMoves; i++)
