@@ -13,7 +13,11 @@ typedef struct
     double cpu_time_taken;
 } Timer;
 
-inline void StartTimer(Timer* t)
+void StartTimer(Timer* t);
+void StopTimer(Timer* t);
+
+#ifdef TIMER_IMPLEMENTATION
+void StartTimer(Timer* t)
 {
     t->c_t = clock();
     gettimeofday(&(t->timecheck), NULL);
@@ -21,7 +25,7 @@ inline void StartTimer(Timer* t)
            (long)(t->timecheck.tv_usec) / 1000;
 }
 
-inline void StopTimer(Timer* t)
+void StopTimer(Timer* t)
 {
     t->cpu_time_taken = ((double) (clock() - t->c_t) / CLOCKS_PER_SEC);
     gettimeofday(&(t->timecheck), NULL);
@@ -29,5 +33,6 @@ inline void StopTimer(Timer* t)
            (long)(t->timecheck.tv_usec) / 1000 - t->t;
     t->time_taken = (double)t->t / 1000;
 }
+#endif
 
 #endif

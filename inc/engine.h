@@ -17,6 +17,7 @@ Move findBestMove(Board* board, uint8_t depth);
 int8_t evaluateBoard(Board* board);
 void perftRun(Board* board, PerftInfo* pi, uint8_t depth);
 void perftRunThreaded(Board* board, PerftInfo* pi, uint8_t depth);
+void perftRunThreadedABPrune(Board* board, PerftInfo* pi, uint8_t depth);
 void printPerft(PerftInfo pi);
 int compareMoveWeights(const void* one, const void* two);
 

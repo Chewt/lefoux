@@ -105,6 +105,12 @@ typedef enum {
     IA8, IB8, IC8, ID8, IE8, IF8, IG8, IH8
 } enumIndexSquare;
 
+typedef enum {
+   ANY,
+   CAPTURE,
+   PASSIVE
+} moveType;
+
 // Extract en passant from info
 // Does en passant exist?
 #define bgetenp(x) ((uint8_t)(0x1 & (x >> 8)))
@@ -145,7 +151,7 @@ typedef enum {
  *   bits are file, upper 3 rank
  * - Piece is the type of piece that is moving
  * - Color is the color of the piece that is moving
- * - Promote is the piece that a pawn will promote to. Use PAWN when there is 
+ * - Promote is the piece that a pawn will promote to. Use PAWN when there is
  *   no promotion
  *****************************************************************************/
 typedef uint32_t Move;
@@ -186,21 +192,25 @@ typedef uint32_t Move;
 // Extract previous board info
 #define mgetprevinfo(x)  ((uint16_t)((x >> 22) & 0x1ff))
 
+Move mcreate(int lead, uint8_t src, uint8_t dst, uint8_t piece,
+                    uint8_t promote, uint8_t color);
+#ifdef BOARD_IMPLEMENTATION
 /*
  * @param lead The leading bits in the move. Could be weight or undo info
  * @param src The index of the source square
  * @param dst The index of the destination square
  * @param piece The type of piece that is moving
- * @param promote The piece a pawn is promoting to. Use PAWN when there 
+ * @param promote The piece a pawn is promoting to. Use PAWN when there
  * is no promotion
  * @param color The color to move. Use _WHITE and _BLACK (notice underscores)
  */
-inline Move mcreate(int lead, uint8_t src, uint8_t dst, uint8_t piece, 
-                    uint8_t promote, uint8_t color) 
+Move mcreate(int lead, uint8_t src, uint8_t dst, uint8_t piece,
+                    uint8_t promote, uint8_t color)
 {
-    return ( (lead << 19)|((src & 0x3f) << 13)|((dst & 0x3f) << 7)| 
+    return ( (lead << 19)|((src & 0x3f) << 13)|((dst & 0x3f) << 7)|
              ((piece & 0x7) << 4)|((promote & 0x7) << 1)|(color & 1));
 }
+#endif
 
 extern const uint64_t RDIAG;
 extern const uint64_t LDIAG;
@@ -248,7 +258,7 @@ void printBitboard(uint64_t bb);
  * @param moves a pointer to a preallocated array of type Move
  * @return number of moves in the array
  */
-int8_t genAllLegalMoves(Board *board, Move *moves);
+int8_t genAllLegalMoves(Board *board, Move *moves, moveType type);
 
 /*
  * @param board a pointer to a Board struct
@@ -282,7 +292,7 @@ void printMove(Move move);
  */
 void printMoveSAN(Move move);
 
-/* 
+/*
  * @brief Generates an attack map for a given piece type on a given square.
  * This attack map considers other pieces that may block a move.
  * @param board the board to generate the attack map from

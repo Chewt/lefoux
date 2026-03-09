@@ -399,7 +399,7 @@ int checkIfLegal(Board* board, Move* move)
  * and returns the number of legal moves. Use MAX_MOVES_PER_POSITION
  * as the max size for moves
  */
-int8_t genAllLegalMoves(Board *board, Move *moves)
+int8_t genAllLegalMoves(Board *board, Move *moves, moveType type)
 {
     uint64_t piece;
     enumIndexSquare square;
@@ -825,7 +825,7 @@ int loadFen(Board* board, char* fen)
  * Reverse the colors in a fen string, including the orientation of the board
  * and who's turn it is to play.
  */
-void reverseFen(char* dest, char* fen) 
+void reverseFen(char* dest, char* fen)
 {
     // Initially copy the fen string into the dest buffer, and we will manipulate
     // it from there.
@@ -847,14 +847,14 @@ void reverseFen(char* dest, char* fen)
 
     // Swap colors
     c = dest;
-    while (*c != ' ') 
+    while (*c != ' ')
     {
-        if (*c >= 'a' && *c <= 'z') 
+        if (*c >= 'a' && *c <= 'z')
         {
             char newC = *c - 'a';
             *c = newC + 'A';
-        } 
-        else if (*c >= 'A' && *c <= 'Z') 
+        }
+        else if (*c >= 'A' && *c <= 'Z')
         {
             char newC = *c - 'A';
             *c = newC + 'a';

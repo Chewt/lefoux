@@ -5,6 +5,9 @@
 #include <string.h>
 #include <time.h>
 
+#define BITHELPERS_IMPLEMENTATION
+#define BOARD_IMPLEMENTATION
+
 #include "bitHelpers.h"
 #include "board.h"
 #include "tests.h"

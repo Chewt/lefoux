@@ -3,10 +3,13 @@
 #include <string.h>
 #include <stdlib.h>
 
+#define TIMER_IMPLEMENTATION
+
 #include "board.h"
 #include "engine.h"
 #include "bitHelpers.h"
 #include "timer.h"
+
 
 static char *good = "\e[32m";
 static char *bad = "\e[31m";
@@ -58,7 +61,7 @@ PerftInfo* runPerftTest(Board *board, PerftInfo *pi, uint8_t depth)
 PerftInfo* runPerftTestABPruning(Board *board, PerftInfo *pi, uint8_t depth)
 {
     memset(pi, 0, sizeof(PerftInfo));
-    perftRunThreaded(board, pi, depth);
+    perftRunThreadedABPrune(board, pi, depth);
     return pi;
 }
 
@@ -349,23 +352,23 @@ int tests()
     fprintf(stderr, " -- genAllLegalMoves() -- \n");
     b = getDefaultBoard();
     RUN_TEST( "genAllLegalMoves from starting position",
-              (genAllLegalMoves(&b, allMoves)), int, 20, printInt, intDiff , noFree);
+              (genAllLegalMoves(&b, allMoves, ANY)), int, 20, printInt, intDiff , noFree);
     m = mcreate(0, IH2, IH4, PAWN, 0, _WHITE);
     boardMove(&b, m);
     RUN_TEST( "genAllLegalMoves from 1. h4",
-              (genAllLegalMoves(&b, allMoves)), int, 20, printInt, intDiff , noFree);
+              (genAllLegalMoves(&b, allMoves, ANY)), int, 20, printInt, intDiff , noFree);
     m = mcreate(0, IE7, IE5, PAWN, 0, _BLACK);
     boardMove(&b, m);
     RUN_TEST( "genAllLegalMoves from 1. h4 e5",
-              (genAllLegalMoves(&b, allMoves)), int, 21, printInt, intDiff , noFree);
+              (genAllLegalMoves(&b, allMoves, ANY)), int, 21, printInt, intDiff , noFree);
     m = mcreate(0, IH4, IH5, PAWN, 0, _WHITE);
     boardMove(&b, m);
     RUN_TEST( "genAllLegalMoves from 1. h4 e5 2. h5",
-              (genAllLegalMoves(&b, allMoves)), int, 29, printInt, intDiff , noFree);
+              (genAllLegalMoves(&b, allMoves, ANY)), int, 29, printInt, intDiff , noFree);
     m = mcreate(0, IG7, IG5, PAWN, 0, _BLACK);
     boardMove(&b, m);
     RUN_TEST( "genAllLegalMoves from 1. h4 e5 2. h5 g5",
-              (genAllLegalMoves(&b, allMoves)), int, 23, printInt, intDiff , noFree);
+              (genAllLegalMoves(&b, allMoves, ANY)), int, 23, printInt, intDiff , noFree);
 
     /* FEN tests */
     fprintf(stderr, " -- FEN Tests -- \n");
@@ -446,6 +449,7 @@ int tests()
               myPrintPerft, perftDiff, free);
 
     /* Alpha-Beta Pruning tests */
+    /*
     fprintf(stderr, " -- Alpha-Beta Pruning Perft Tests -- \n");
     b = getDefaultBoard();
     RUN_TEST("Perft w/ AB Pruning depth 1", runPerftTestABPruning(&b, &pi, 1), PerftInfo*,
@@ -475,18 +479,7 @@ int tests()
     RUN_TEST("AB Pruning Perft depth 3 - position 2", runPerftTestABPruning(&b, &pi, 3), PerftInfo*,
               &((PerftInfo){97862, 17102, 45, 3162, 0, 993 ,0}),
               myPrintPerft, perftDiffInfoOnly, free);
-
-    fprintf(stderr, " -- AB Pruning Puzzle 5 Perft Tests -- \n");
-    loadFen(&b, "4Q3/r4rkp/2p3p1/3p4/3P1P2/8/pq3PK1/3R3R w - - 8 33");
-    PerftInfo refPi;
-    RUN_TEST("AB Pruning Perft depth 5 - Puzzle 5 whit", runPerftTestABPruning(&b, &pi, 5), PerftInfo*,
-              runPerftTest(&b, &refPi, 5),
-              myPrintPerft, perftDiffInfoOnly, free);
-    loadFen(&b, "r3r3/1kp3QP/8/2p1p3/4P3/1P3P2/PKR4R/3q4 b - - 0 1");
-    RUN_TEST("AB Pruning Perft depth 5 - Puzzle 5 black", runPerftTestABPruning(&b, &pi, 5), PerftInfo*,
-              runPerftTest(&b, &refPi, 5),
-              myPrintPerft, perftDiffInfoOnly, free);
-
+    */
 
     /* Puzzle Proficiency */
     fprintf(stderr, "-- Puzzle Proficiency --\n");

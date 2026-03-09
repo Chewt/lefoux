@@ -40,10 +40,28 @@ int8_t evaluateBoard(Board* board)
     return netWeightOfPieces(board);
 }
 
+int attackLines( Board* board ) {
+    Move moves[MAX_MOVES_PER_POSITION];
+    uint8_t numMoves = genAllLegalMoves(board, moves, ANY);
+    int i;
+    int8_t maxWeight = -126;
+    for (i = 0; i < numMoves; ++i) {
+        // Set by undoMove, 7 indicates empty space
+        if ( mgettaken(moves[i]) == 7 ) continue;
+        Move undo = boardMove(board, moves[i]);
+        int8_t weight = -attackLines(board);
+        undoMove(board, undo);
+        if( weight > maxWeight )
+            maxWeight = weight;
+    }
+    if ( maxWeight == -126 ) return evaluateBoard(board);
+    return maxWeight;
+}
+
 int alphaBeta( Board* board, int8_t alpha, int8_t beta, int8_t depthleft ) {
     if ( depthleft == 0 ) return evaluateBoard(board);
     Move moves[MAX_MOVES_PER_POSITION];
-    uint8_t numMoves = genAllLegalMoves(board, moves);
+    uint8_t numMoves = genAllLegalMoves(board, moves, ANY);
     int i;
     for (i = 0; i < numMoves; ++i) {
         Move undo = boardMove(board, moves[i]);
@@ -71,13 +89,29 @@ Move findBestMove(Board* board, uint8_t depth)
     // Assumes MAX_MOVES_PER_POSITION < 256
     uint8_t i;
     uint8_t numMoves;
+    uint8_t captureMoves = 0;
 
     // Setup independent variables for each thread
     Board boards[NUM_THREADS];
     for (i=0; i<NUM_THREADS; i++) memcpy(&boards[i], board, sizeof(Board));
     // MAX_MOVES_PER_POSITION*sizeof(Move) = 218 * 4 = 872 bytes
     Move moves[MAX_MOVES_PER_POSITION];
-    numMoves = genAllLegalMoves(board, moves);
+    numMoves = genAllLegalMoves(board, moves, ANY);
+    for (i=0; i<numMoves; i++)
+    {
+        // Set by undoMove, 7 indicates empty space
+        if ( mgettaken(moves[i]) == 7 ) continue;
+        Move undoM = boardMove(&boards[0], moves[i]);
+        int8_t weight = attackLines(&boards[0]);
+        moves[i] = msetweight(moves[i], weight);
+        undoMove(&boards[0], undoM);
+        // swap capture move to front
+        undoM = moves[i];
+        moves[i] = moves[captureMoves];
+        moves[captureMoves] = undoM;
+        captureMoves++;
+    }
+    qsort(moves, captureMoves, sizeof(Move), compareMoveWeights);
     for (int curdepth=1; curdepth <= depth; curdepth++) {
         // Generate tasks for this loop to be parallelized
         int8_t alpha = -126;
@@ -150,7 +184,7 @@ void perftRunThreaded(Board* board, PerftInfo* pi, uint8_t depth)
     }
 
     Move movelist[MAX_MOVES_PER_POSITION];
-    int n_moves = genAllLegalMoves(board, movelist);
+    int n_moves = genAllLegalMoves(board, movelist, ANY);
     int i;
 
     PerftInfo pilist[NUM_THREADS] = {0};
@@ -189,7 +223,7 @@ void perftRun(Board* board, PerftInfo* pi, uint8_t depth)
     }
 
     Move movelist[MAX_MOVES_PER_POSITION];
-    int n_moves = genAllLegalMoves(board, movelist);
+    int n_moves = genAllLegalMoves(board, movelist, ANY);
     int i;
 
     if (depth == 1)
@@ -296,7 +330,7 @@ void printPerft(PerftInfo pi)
 
 int alphaBetaPerft( Board* board, int8_t alpha, int8_t beta, int8_t depthleft, PerftInfo* pi ) {
     Move moves[MAX_MOVES_PER_POSITION];
-    uint8_t numMoves = genAllLegalMoves(board, moves);
+    uint8_t numMoves = genAllLegalMoves(board, moves, ANY);
     int i;
 
     if ( depthleft == 0 )
@@ -398,7 +432,7 @@ void perftRunThreadedABPrune(Board* board, PerftInfo* pi, uint8_t depth)
     for (i=0; i<NUM_THREADS; i++) memcpy(&boards[i], board, sizeof(Board));
     // MAX_MOVES_PER_POSITION*sizeof(Move) = 218 * 4 = 872 bytes
     Move moves[MAX_MOVES_PER_POSITION];
-    numMoves = genAllLegalMoves(board, moves);
+    numMoves = genAllLegalMoves(board, moves, ANY);
     for (int curdepth=1; curdepth <= depth; curdepth++) {
         // Generate tasks for this loop to be parallelized
         int8_t alpha = -125;
