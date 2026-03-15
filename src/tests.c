@@ -352,23 +352,23 @@ int tests()
     fprintf(stderr, " -- genAllLegalMoves() -- \n");
     b = getDefaultBoard();
     RUN_TEST( "genAllLegalMoves from starting position",
-              (genAllLegalMoves(&b, allMoves, ANY)), int, 20, printInt, intDiff , noFree);
+              (genAllLegalMoves(&b, allMoves)), int, 20, printInt, intDiff , noFree);
     m = mcreate(0, IH2, IH4, PAWN, 0, _WHITE);
     boardMove(&b, m);
     RUN_TEST( "genAllLegalMoves from 1. h4",
-              (genAllLegalMoves(&b, allMoves, ANY)), int, 20, printInt, intDiff , noFree);
+              (genAllLegalMoves(&b, allMoves)), int, 20, printInt, intDiff , noFree);
     m = mcreate(0, IE7, IE5, PAWN, 0, _BLACK);
     boardMove(&b, m);
     RUN_TEST( "genAllLegalMoves from 1. h4 e5",
-              (genAllLegalMoves(&b, allMoves, ANY)), int, 21, printInt, intDiff , noFree);
+              (genAllLegalMoves(&b, allMoves)), int, 21, printInt, intDiff , noFree);
     m = mcreate(0, IH4, IH5, PAWN, 0, _WHITE);
     boardMove(&b, m);
     RUN_TEST( "genAllLegalMoves from 1. h4 e5 2. h5",
-              (genAllLegalMoves(&b, allMoves, ANY)), int, 29, printInt, intDiff , noFree);
+              (genAllLegalMoves(&b, allMoves)), int, 29, printInt, intDiff , noFree);
     m = mcreate(0, IG7, IG5, PAWN, 0, _BLACK);
     boardMove(&b, m);
     RUN_TEST( "genAllLegalMoves from 1. h4 e5 2. h5 g5",
-              (genAllLegalMoves(&b, allMoves, ANY)), int, 23, printInt, intDiff , noFree);
+              (genAllLegalMoves(&b, allMoves)), int, 23, printInt, intDiff , noFree);
 
     /* FEN tests */
     fprintf(stderr, " -- FEN Tests -- \n");
@@ -393,6 +393,22 @@ int tests()
     undoMove(&b, m);
     undoMove(&b, undoM);
     RUN_TEST("Undo with en passant", &b, Board*, &fen_board,
+              printBoard, boardDiff, free);
+
+    loadFen(&fen_board, "r3k2r/p1ppqpb1/bn2pnp1/3PN3/Pp2P3/2N2Q1p/1PPBBPPP/R3K2R b KQkq a3 0 1");
+    loadFen(&b, "r3k2r/p1ppqpb1/bn2pnp1/3PN3/Pp2P3/2N2Q1p/1PPBBPPP/R3K2R b KQkq a3 0 1");
+    m = mcreate(0, IE8, IG8, KING, 0, _BLACK);
+    m = boardMove(&b, m);
+    undoMove(&b, m);
+    RUN_TEST("Undo with castling", &b, Board*, &fen_board,
+              printBoard, boardDiff, free);
+
+    loadFen(&fen_board, "4r3/4n3/kP6/Pb1rR2P/5P2/4P1K1/1p3R2/8 b - - 0 101");
+    loadFen(&b, "4r3/4n3/kP6/Pb1rR2P/5P2/4P1K1/1p3R2/8 b - - 0 101");
+    m = mcreate(0, IB2, IB1, PAWN, QUEEN, _BLACK);
+    m = boardMove(&b, m);
+    undoMove(&b, m);
+    RUN_TEST("Undo with pawn promotion", &b, Board*, &fen_board,
               printBoard, boardDiff, free);
 
     /* Evaluate Board tests */

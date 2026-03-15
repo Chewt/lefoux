@@ -308,8 +308,9 @@ void undoMove(Board* board, Move move)
     int move_color = (mgetcol(move)) ? BLACK : WHITE;
 
     // Undo move
-    board->pieces[move_color + mgetpiece(move)] ^= (mgetsrcbb(move)
-                                                  | mgetdstbb(move));
+    board->pieces[move_color + mgetpiece(move)] ^= mgetsrcbb(move);
+    board->pieces[mgetpiece(move) + mgetprom(move) + move_color] ^= mgetdstbb(move);
+
     /* Move rooks when castling */
     /* White Kingside */
     if ((mgetpiece(move) == KING) && (mgetsrc(move) == IE1)
@@ -399,7 +400,7 @@ int checkIfLegal(Board* board, Move* move)
  * and returns the number of legal moves. Use MAX_MOVES_PER_POSITION
  * as the max size for moves
  */
-int8_t genAllLegalMoves(Board *board, Move *moves, moveType type)
+int8_t genAllLegalMoves(Board *board, Move *moves)
 {
     uint64_t piece;
     enumIndexSquare square;
@@ -430,15 +431,35 @@ int8_t genAllLegalMoves(Board *board, Move *moves, moveType type)
 
             while ((dst = bitmap & -bitmap))
             {
-                moves[movecount++] = (square << 13)
-                    | (bitScanForward(dst) << 7)
-                    | (pieceType << 4)
-                    | bgetcol(board->info);
+                if ( pieceType == PAWN && (
+                   (color_to_move == WHITE && dst & RANK[7]) ||
+                   (color_to_move == BLACK && dst & RANK[0]) )
+                   ) {
+                   for (int promo=PAWN+1; promo < KING; promo++) {
+                      moves[movecount++] = (square << 13)
+                         | (bitScanForward(dst) << 7)
+                         | (pieceType << 4)
+                         | (promo << 1)
+                         | bgetcol(board->info);
 
-                // Check if move is legal, if not decrement movecount
-                if (!checkIfLegal(board, (moves + movecount - 1)))
-                {
-                    movecount--;
+                   }
+                   // Check if move is legal, if not decrement movecount
+                   // Only need to check one pawn promotion
+                   if (!checkIfLegal(board, (moves + movecount - 1)))
+                   {
+                      movecount -= KING - ( PAWN + 1 );
+                   }
+                } else {
+                   moves[movecount++] = (square << 13)
+                      | (bitScanForward(dst) << 7)
+                      | (pieceType << 4)
+                      | bgetcol(board->info);
+
+                   // Check if move is legal, if not decrement movecount
+                   if (!checkIfLegal(board, (moves + movecount - 1)))
+                   {
+                      movecount--;
+                   }
                 }
 
                 // Iterate to next move
@@ -484,7 +505,7 @@ Move boardMove(Board *board, Move move)
     board->pieces[mgetpiece(move) + (enemy_color ^ BLACK)] ^= mgetsrcbb(move);
 
     /* Add dst piece */
-    board->pieces[mgetpiece(move) + (enemy_color ^ BLACK)] ^= mgetdstbb(move);
+    board->pieces[mgetpiece(move) + mgetprom(move) + (enemy_color ^ BLACK)] ^= mgetdstbb(move);
 
     /* Move rooks when castling */
     /* White Kingside */

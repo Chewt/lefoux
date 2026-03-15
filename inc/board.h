@@ -258,7 +258,7 @@ void printBitboard(uint64_t bb);
  * @param moves a pointer to a preallocated array of type Move
  * @return number of moves in the array
  */
-int8_t genAllLegalMoves(Board *board, Move *moves, moveType type);
+int8_t genAllLegalMoves(Board *board, Move *moves);
 
 /*
  * @param board a pointer to a Board struct
