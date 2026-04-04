@@ -135,13 +135,15 @@ TEntry* zobrist_read( int hash )
    return &(g_ztable.items[ hash % g_ztable.capacity ]);
 }
 
+TEntry* zobrist_write_table( Zobrist *table, int hash, TEntry te );
+
 // Doubles the size of the table
 // Contains a race condition with readers and writers
 void zobrist_resize( Zobrist *table )
 {
    Zobrist new_table = {
-      .capacity = table->capacity * 2
-      .items = calloc( newCapacity, sizeof(TEntry) )
+      .capacity = table->capacity * 2,
+      .items = calloc( table->capacity * 2, sizeof(TEntry) )
    };
    // Deep copy
    for (int i=0; i < table->capacity; i++) {
