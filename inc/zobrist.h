@@ -3,7 +3,8 @@
 
 #include "board.h"
 
-#define ZOBRIST_INIT_CAPACITY 0xFFFFFFF
+// 800 bytes needed per TEntry, so good initial capacity is probably around 1GiB (0x40000000 bytes) of memory
+#define ZOBRIST_INIT_CAPACITY ((int)( 0x40000000 / sizeof(TEntry)))
 
 typedef struct
 {
@@ -26,19 +27,13 @@ typedef struct
    int enPassant[8];
 } ZHashes;
 
-// g_zhashes is a global table with prand values for computing the Zobrist hash
-// This table is intended to be read-only outside of zobrist_init
-ZHashes g_zhashes;
-// g_ztable is a global hash table containing TEntries storing depth, score,
-// and board state intended to store board positions that have already been
-// calculated.
-Zobrist g_ztable;
-
-void zobrist_init();
+void zobrist_init(Zobrist *table);
 int zhash_board( Board *board );
 int zhash_move( Board *board, Move move );
 TEntry* zobrist_read( int hash );
 TEntry* zobrist_write( int hash, TEntry te );
+TEntry* zobrist_write_table( Zobrist *table, int hash, TEntry te );
+TEntry* zobrist_read_table(Zobrist *table, int hash);
 void zobrist_free( Zobrist *table );
 
 #endif

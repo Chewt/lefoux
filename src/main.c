@@ -91,7 +91,7 @@ int main(int argc, char** argv)
     Board board = getDefaultBoard();
     g_state.flags = 0;
 
-    zobrist_init();
+    zobrist_init(NULL);
 
     int running = 1;
     // This directive enables parallelism
