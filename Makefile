@@ -6,7 +6,9 @@ OBJECTS = $(SOURCES:$(SRCDIR)%.c=$(OBJDIR)%.o)
 INCLUDES = $(SOURCES:$(SRCDIR)%.c=$(INCLUDEDIR)%.h)
 UNIDEPS =
 XFLAGS =
-CFLAGS = -I$(INCLUDEDIR) -O2 -fopenmp $(XFLAGS)
+CFLAGS = -I$(INCLUDEDIR) -fopenmp $(XFLAGS)
+DEBUGFLAGS = -ggdb -DDEBUG -Wall -Wextra
+RELEASEFLAGS = -O2
 CC = gcc
 TARGET = lefoux
 PERFDATA = perfdata.csv
@@ -35,9 +37,12 @@ check: debug
 	./$(TARGET) --test
 
 .PHONY: debug
-debug: CFLAGS += -g -DDEBUG -Wall -Wextra # -Wno-unused-parameter
+debug: CFLAGS += $(DEBUGFLAGS)
 debug: clean all
-debug: $(TARGET)
+
+.PHONY: release
+release: CFLAGS += $(RELEASEFLAGS)
+release: clean all
 
 $(TARGET): $(OBJECTS)
 	$(CC) $(OBJECTS) $(CFLAGS) -o $(TARGET)
