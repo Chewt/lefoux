@@ -137,7 +137,7 @@ Move findBestMove(Board* board, uint8_t depth)
             undoMove(&boards[me], undoM);
             // Update alpha if a better move was found at this depth. Critical
             // to avoid race conditions with setting alpha and g_state
-            #pragma omp critical
+            #pragma omp critical (bestMove)
             if (weight > alpha)
             {
                 alpha = weight;
@@ -458,7 +458,7 @@ void perftRunThreadedABPrune(Board* board, PerftInfo* pi, uint8_t depth)
             undoMove(&boards[me], undoM);
             // Update alpha if a better move was found at this depth. Critical
             // to avoid race conditions with setting alpha and g_state
-            #pragma omp critical
+            #pragma omp critical (bestMovePerft)
             if (weight > alpha)
             {
                 alpha = weight;

@@ -9,6 +9,7 @@
 #define BOARD_IMPLEMENTATION
 
 #include "bitHelpers.h"
+#include "zobrist.h"
 #include "board.h"
 #include "tests.h"
 #include "magic.h"
@@ -89,6 +90,8 @@ int main(int argc, char** argv)
 
     Board board = getDefaultBoard();
     g_state.flags = 0;
+
+    zobrist_init();
 
     int running = 1;
     // This directive enables parallelism

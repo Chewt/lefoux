@@ -9,6 +9,7 @@
 #include "engine.h"
 #include "bitHelpers.h"
 #include "timer.h"
+#include "zobrist.h"
 
 
 static char *good = "\e[32m";
@@ -410,6 +411,13 @@ int tests()
     undoMove(&b, m);
     RUN_TEST("Undo with pawn promotion", &b, Board*, &fen_board,
               printBoard, boardDiff, free);
+
+    /* Zobrist hashing tests */
+    /*
+    Zobrist *zTable = NULL;
+    TEntry te = zobrist_write(zTable, 0, TEntry{ 1, 1 });
+    RUN_TEST("Write table entry to empty table", te,
+*/
 
     /* Evaluate Board tests */
     fprintf(stderr, " -- Evaluate Board Tests -- \n");
