@@ -159,6 +159,7 @@ int is_entry_empty(TEntry et) {
 
 TEntry* zobrist_read_table(Zobrist *table, int hash)
 {
+    // TODO handle collisions here too
     TEntry* entry = &table->items[hash % table->capacity];
     return (is_entry_empty(*entry)) ? NULL : entry;
 }
@@ -199,6 +200,16 @@ void zobrist_resize(Zobrist *table)
 // Thread UNSAFE
 TEntry* zobrist_write_table( Zobrist *table, int hash, TEntry te )
 {
+    // First check resize lock to see if table is being resized and wait until
+    // it is available (no need to take the lock though, only the resize
+    // function should take it)
+
+    // A naive solution would be to have a global lock on all writes to table,
+    // or store one lock for every bucket and only lock when trying to write to
+    // a specific bucket. If the lock is free, grab the lock and write to the
+    // bucket. If its not free (at the time of trying to write to it), then
+    // wait until it is free, grab the lock, check for a collision.
+
     // TODO idk this is complicated
     // Capacity here isn't reliable during a resize. Will want to wait for
     // any resize functionality to finish before continuing, however we don't
