@@ -8,11 +8,19 @@
 // Testing with power of two capacity
 #define ZOBRIST_INIT_CAPACITY ((int)(0x8000000))
 
+typedef enum 
+{
+    EXACT,
+    LOWERBOUND,
+    UPPERBOUND
+} NodeType;
+
 typedef struct
 {
    uint8_t depth;
    int8_t score;
    uint64_t hash;
+   NodeType nodeType;
 } TEntry;
 
 typedef struct
