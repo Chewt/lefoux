@@ -36,7 +36,7 @@ void zobrist_init(Zobrist* table)
     ZHashes empty_zhashes = {0};
     if (!memcmp(&g_zhashes, &empty_zhashes, sizeof(ZHashes)))
     {
-        srand(0); // Sets the random number seed for predictable randomness
+        srand(80085); // Sets the random number seed for predictable randomness
                   // srand(time(null)); // Sets the random seed for unknown randomness
         g_zhashes.blackToMove = rand();
         for (int i=PAWN; i<=_KING; i++)
@@ -269,6 +269,7 @@ void zobrist_resize(Zobrist *table)
 TEntry* zobrist_write_table( Zobrist *table, int hash, TEntry te )
 {
     int table_index = hash % table->capacity;
+// Commented out to reduce serialization overhead, we accept any and all risk :D
 #pragma omp critical (zobristWrite)
     if (table->items[table_index].depth < te.depth)
         table->items[table_index] = te;

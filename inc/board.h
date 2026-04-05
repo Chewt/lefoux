@@ -39,6 +39,7 @@ typedef struct
 {
     uint64_t pieces[12];
     uint16_t info;
+    int hash;
 } Board;
 
 /*

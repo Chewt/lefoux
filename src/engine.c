@@ -65,9 +65,7 @@ int attackLines( Board* board, int8_t alpha, int8_t beta ) {
 int alphaBeta( Board* board, int8_t alpha, int8_t beta, int8_t depthleft ) {
     if ( depthleft == 0 ) 
         return evaluateBoard(board);
-
-    int hash = zhash_board(board);
-    TEntry* entry = zobrist_read(hash);
+    TEntry* entry = zobrist_read(board->hash);
     if (entry && entry->depth >= depthleft) {
         return entry->score;
     }
@@ -84,14 +82,14 @@ int alphaBeta( Board* board, int8_t alpha, int8_t beta, int8_t depthleft ) {
         if( weight >= beta )
         {
             new_entry.score = beta;
-            zobrist_write(hash, new_entry);
+            zobrist_write(board->hash, new_entry);
             return beta;
         }
         if( weight > alpha )
             alpha = weight;
     }
     new_entry.score = alpha;
-    zobrist_write(hash, new_entry);
+    zobrist_write(board->hash, new_entry);
     return alpha;
 }
 

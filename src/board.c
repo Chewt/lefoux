@@ -6,6 +6,7 @@
 #include "board.h"
 #include "bitHelpers.h"
 #include "magic.h"
+#include "zobrist.h"
 
 /* Constants for piece attacks */
 const uint64_t RDIAG = 0x0102040810204080UL;
@@ -303,6 +304,7 @@ uint64_t genAllAttackMap(Board* board, int color)
 
 void undoMove(Board* board, Move move)
 {
+    board->hash ^= zhash_move(board, move);
     // Restore boardinfo
     board->info = mgetprevinfo(move);
     int move_color = (mgetcol(move)) ? BLACK : WHITE;
@@ -565,7 +567,9 @@ Move boardMove(Board *board, Move move)
         }
     }
 
-    return (prev_info << 19) | (move & 0x7ffff);
+    Move u_move = (prev_info << 19) | (move & 0x7ffff);
+    board->hash ^= zhash_move(board, u_move);
+    return u_move;
 }
 
 Board getDefaultBoard()
@@ -584,6 +588,7 @@ Board getDefaultBoard()
     b.pieces[BLACK + QUEEN]  = D8;
     b.pieces[BLACK + KING]   = E8;
     b.info = (0xf << 1) | 0x0;
+    b.hash = zhash_board(&b);
 
     return b;
 }
@@ -839,6 +844,7 @@ int loadFen(Board* board, char* fen)
     if (!(token = strtok(NULL, " "))) return 0;
     /* Full move counter */
     if (!(token = strtok(NULL, " "))) return 0;
+    board->hash = zhash_board(board);
     return token - fen_copy;
 }
 

@@ -21,6 +21,8 @@ void printInt(int x) { fprintf(stderr, "%d\n", x); }
 
 int intDiff(int a, int b) { return a - b; }
 
+void printTEntry(TEntry *entry) { fprintf(stderr, "depth: %d score: %d board: nah man\n", entry->depth, entry->score); }
+
 void printLongHex(uint64_t x) { printf("0x%lx", x); }
 
 uint64_t xor64bit(uint64_t a, uint64_t b) { return a ^ b; }
@@ -50,6 +52,16 @@ Board* boardDiff(Board *check, Board *ref)
         return diffBoard;
     free(diffBoard);
     return NULL;
+}
+
+TEntry* TEntryDiff(TEntry* check, TEntry* ref) {
+    TEntry* diff_entry = malloc(sizeof(TEntry));
+    if (!memcmp(check, ref, sizeof(TEntry)))
+        return NULL;
+    diff_entry->score = check->score - ref->score;
+    diff_entry->depth = check->depth - ref->depth;
+    diff_entry->board = (Board){ 0 };
+    return diff_entry;
 }
 
 PerftInfo* runPerftTest(Board *board, PerftInfo *pi, uint8_t depth)
@@ -413,11 +425,20 @@ int tests()
               printBoard, boardDiff, free);
 
     /* Zobrist hashing tests */
-    /*
-    Zobrist *zTable = NULL;
-    TEntry te = zobrist_write(zTable, 0, TEntry{ 1, 1 });
-    RUN_TEST("Write table entry to empty table", te,
-*/
+    fprintf(stderr, " -- Zobrist Hash Tests -- \n");
+    Zobrist zTable = {0};
+    zobrist_init(&zTable);
+    b = getDefaultBoard();
+    TEntry entry = { .depth = 69, .score = 67, .board = b };
+    zobrist_write_table(&zTable, b.hash, entry);
+    TEntry* retrieved_entry = zobrist_read_table(&zTable, b.hash);
+    RUN_TEST("Zobrist read/write", retrieved_entry, TEntry*, &entry, printTEntry, TEntryDiff, free);
+
+    loadFen(&b, "4r3/4n3/kP6/Pb1rR2P/5P2/4P1K1/1p3R2/8 b - - 0 101");
+    m = mcreate(0, IB2, IB1, PAWN, QUEEN, _BLACK);
+    m = boardMove(&b, m);
+    int manualHash = zhash_board(&b);
+    RUN_TEST("After Move Hash equals manual hash", b.hash, int, manualHash, printInt, intDiff, noFree);
 
     /* Evaluate Board tests */
     fprintf(stderr, " -- Evaluate Board Tests -- \n");
@@ -606,12 +627,11 @@ int tests()
             "8/2r3P1/1k1p4/2p5/p2rR1Bp/6pK/3N4/3R4 b - - 0 101");
     */
 
-    /* too long :(
+    //too long :(
     loadFen(&b, "kr6/1p2Rp2/pn4p1/1N5p/7P/3Q4/PPP2qP1/1K6 w - - 0 1");
     m = mcreate(0, IB5, IC7, KNIGHT, 0, _WHITE);
-    RUN_TEST("Puzzle 6w: Opening the door", findBestMove(&b, 7), Move, m,
+    RUN_TEST("Puzzle 7: Opening the door", findBestMove(&b, 7), Move, m,
         printMoveSAN, moveDiff, noFree);
-    */
 
     /* TODO convert to black test
     loadFen(&b, "kr6/1p2Rp2/pn4p1/1N5p/7P/3Q4/PPP2qP1/1K6 w - - 0 1");
