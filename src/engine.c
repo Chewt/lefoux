@@ -161,6 +161,7 @@ Move findBestMove(Board* board, uint8_t depth)
             new_entry.hash = board->hash;
             new_entry.depth = curdepth;
             new_entry.score = weight;
+            new_entry.nodeType = EXACT;
             zobrist_write(board->hash, new_entry);
 
             moves[i] = msetweight(moves[i], weight);
