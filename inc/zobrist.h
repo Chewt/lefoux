@@ -19,8 +19,8 @@ typedef struct
 {
    uint8_t depth;
    int8_t score;
+   uint16_t nodeType;
    uint64_t hash;
-   NodeType nodeType;
 } TEntry;
 
 typedef struct
@@ -31,10 +31,10 @@ typedef struct
 
 typedef struct
 {
-   int pieceSquare[12][64];
-   int blackToMove;
-   int castling[4];
-   int enPassant[8];
+   uint64_t pieceSquare[12][64];
+   uint64_t blackToMove;
+   uint64_t castling[4];
+   uint64_t enPassant[8];
 } ZHashes;
 
 void zobrist_init(Zobrist *table);

@@ -7,6 +7,15 @@
 #include "board.h"
 #include "bitHelpers.h"
 
+uint64_t zrand() 
+{
+    uint64_t num = 0;
+    num = rand();
+    num <<= 32;
+    num |= rand();
+    return num;
+}
+
 // g_zhashes is a global table with prand values for computing the Zobrist hash
 // This table is intended to be read-only outside of zobrist_init
 static ZHashes g_zhashes = {0};
@@ -38,21 +47,21 @@ void zobrist_init(Zobrist* table)
     {
         srand(80085); // Sets the random number seed for predictable randomness
                   // srand(time(null)); // Sets the random seed for unknown randomness
-        g_zhashes.blackToMove = rand();
+        g_zhashes.blackToMove = zrand();
         for (int i=PAWN; i<=_KING; i++)
         {
             for (int j=IA1; j<=IH8; j++)
             {
-                g_zhashes.pieceSquare[i][j] = rand();
+                g_zhashes.pieceSquare[i][j] = zrand();
             }
         }
         for (int i=0; i<4; i++)
         {
-            g_zhashes.castling[i] = rand();
+            g_zhashes.castling[i] = zrand();
         }
         for (int i=0; i<4; i++)
         {
-            g_zhashes.enPassant[i] = rand();
+            g_zhashes.enPassant[i] = zrand();
         }
     }
 }
@@ -61,7 +70,7 @@ void zobrist_init(Zobrist* table)
 // Uses g_zhashes read-only, thread safe
 int zhash_board( Board *board )
 {
-    int hash = 0;
+    uint64_t hash = 0;
     uint64_t piece;
     for (int pieceType=PAWN; pieceType<=_KING; pieceType++)
     {
@@ -93,7 +102,7 @@ int zhash_board( Board *board )
 // Uses g_zhashes read-only, thread safe
 int zhash_move( Board *board, Move move )
 {
-    int hash = 0;
+    uint64_t hash = 0;
     int color = (mgetcol(move) == _WHITE) ? WHITE : BLACK;
 
     /* Remove src piece */
