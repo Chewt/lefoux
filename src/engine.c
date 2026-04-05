@@ -67,7 +67,12 @@ int alphaBeta( Board* board, int8_t alpha, int8_t beta, int8_t depthleft ) {
         return evaluateBoard(board);
     TEntry* entry = zobrist_read(board->hash);
     if (entry && entry->depth >= depthleft) {
-        alpha = entry->score;
+        if ((entry->nodeType == EXACT)                              || 
+            (entry->nodeType == LOWERBOUND && entry->score >= beta) ||
+            (entry->nodeType == UPPERBOUND && entry->score <  alpha) )
+        {
+            return entry->score;
+        }
     }
     Move moves[MAX_MOVES_PER_POSITION];
     uint8_t numMoves = genAllLegalMoves(board, moves);
@@ -82,6 +87,7 @@ int alphaBeta( Board* board, int8_t alpha, int8_t beta, int8_t depthleft ) {
         if( weight >= beta )
         {
             new_entry.score = beta;
+            new_entry.nodeType = LOWERBOUND;
             zobrist_write(board->hash, new_entry);
             return beta;
         }
@@ -89,6 +95,7 @@ int alphaBeta( Board* board, int8_t alpha, int8_t beta, int8_t depthleft ) {
             alpha = weight;
     }
     new_entry.score = alpha;
+    new_entry.nodeType = UPPERBOUND;
     zobrist_write(board->hash, new_entry);
     return alpha;
 }
@@ -148,6 +155,15 @@ Move findBestMove(Board* board, uint8_t depth)
             Move undoM = boardMove(&boards[me], moves[i]);
             // Update the move with its weight
             int8_t weight = -alphaBeta(&boards[me], -beta, -(alpha - 1), curdepth);
+
+            // Set transposition table score for this move
+            TEntry new_entry;
+            new_entry.hash = board->hash;
+            new_entry.depth = curdepth;
+            new_entry.score = weight;
+            new_entry.nodeType = EXACT;
+            zobrist_write(board->hash, new_entry);
+
             moves[i] = msetweight(moves[i], weight);
             undoMove(&boards[me], undoM);
             // Update alpha if a better move was found at this depth. Critical

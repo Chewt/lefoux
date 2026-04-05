@@ -7,6 +7,15 @@
 #include "board.h"
 #include "bitHelpers.h"
 
+uint64_t zrand() 
+{
+    uint64_t num = 0;
+    num = rand();
+    num <<= 32;
+    num |= rand();
+    return num;
+}
+
 // g_zhashes is a global table with prand values for computing the Zobrist hash
 // This table is intended to be read-only outside of zobrist_init
 static ZHashes g_zhashes = {0};
@@ -38,21 +47,21 @@ void zobrist_init(Zobrist* table)
     {
         srand(80085); // Sets the random number seed for predictable randomness
                   // srand(time(null)); // Sets the random seed for unknown randomness
-        g_zhashes.blackToMove = rand();
+        g_zhashes.blackToMove = zrand();
         for (int i=PAWN; i<=_KING; i++)
         {
             for (int j=IA1; j<=IH8; j++)
             {
-                g_zhashes.pieceSquare[i][j] = rand();
+                g_zhashes.pieceSquare[i][j] = zrand();
             }
         }
         for (int i=0; i<4; i++)
         {
-            g_zhashes.castling[i] = rand();
+            g_zhashes.castling[i] = zrand();
         }
         for (int i=0; i<4; i++)
         {
-            g_zhashes.enPassant[i] = rand();
+            g_zhashes.enPassant[i] = zrand();
         }
     }
 }
@@ -61,7 +70,7 @@ void zobrist_init(Zobrist* table)
 // Uses g_zhashes read-only, thread safe
 int zhash_board( Board *board )
 {
-    int hash = 0;
+    uint64_t hash = 0;
     uint64_t piece;
     for (int pieceType=PAWN; pieceType<=_KING; pieceType++)
     {
@@ -93,7 +102,7 @@ int zhash_board( Board *board )
 // Uses g_zhashes read-only, thread safe
 int zhash_move( Board *board, Move move )
 {
-    int hash = 0;
+    uint64_t hash = 0;
     int color = (mgetcol(move) == _WHITE) ? WHITE : BLACK;
 
     /* Remove src piece */
@@ -158,29 +167,28 @@ int is_entry_empty(TEntry et) {
     return !et.hash;
 }
 
-TEntry* zobrist_read_table(Zobrist *table, int hash)
+TEntry* zobrist_read_table(Zobrist *table, uint64_t hash)
 {
-    // Assume capacity is always a power of 2!
-    TEntry* entry = &table->items[hash & (table->capacity-1)];
-    return (is_entry_empty(*entry) && entry->hash == hash) ? NULL : entry;
+    TEntry* entry = &table->items[hash & (table->capacity - 1)];
+    return (is_entry_empty(*entry) || entry->hash != hash) ? NULL : entry;
 }
 
 // Returns a pointer to the table entry. Returns NULL if the entry hasn't
 // been evaluated yet
 // Thread safe
-TEntry* zobrist_read(int hash)
+TEntry* zobrist_read(uint64_t hash)
 {
     return zobrist_read_table(&g_ztable, hash);
 }
 
-TEntry* zobrist_write_table(Zobrist *table, int hash, TEntry te);
+TEntry* zobrist_write_table(Zobrist *table, uint64_t hash, TEntry te);
 
 // Writes the provided table entry at hash point IF the provided table
 // entry has a higher depth. Returns the table entry written to the hash
 // location (or the existing table entry if no write occurred)
-TEntry* zobrist_write_table( Zobrist *table, int hash, TEntry te )
+TEntry* zobrist_write_table( Zobrist *table, uint64_t hash, TEntry te )
 {
-    int table_index = hash % table->capacity;
+    int table_index = hash & (table->capacity - 1);
 // Commented out to reduce serialization overhead, we accept any and all risk :D
 #pragma omp critical (zobristWrite)
     if (table->items[table_index].depth < te.depth)
@@ -188,7 +196,7 @@ TEntry* zobrist_write_table( Zobrist *table, int hash, TEntry te )
     return &(table->items[table_index]);
 }
 
-TEntry* zobrist_write( int hash, TEntry te )
+TEntry* zobrist_write( uint64_t hash, TEntry te )
 {
     return zobrist_write_table( &g_ztable, hash, te );
 }
