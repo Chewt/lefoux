@@ -3,15 +3,18 @@
 
 #include "board.h"
 
-// 800 bytes needed per TEntry, so good initial capacity is probably around 1GiB (0x40000000 bytes) of memory
-#define ZOBRIST_INIT_CAPACITY ((int)( 4 * (0x40000000 / sizeof(TEntry))))
+// Good initial capacity is probably around 1GiB (0x40000000 bytes) of memory
+// Need to keep this a power of 2!
+#define ZOBRIST_INIT_CAPACITY ((int)( 2 * (0x40000000 / sizeof(TEntry))))
 // #define ZOBRIST_INIT_CAPACITY ((int)(2048))
 
 typedef struct
 {
    uint8_t depth;
    int8_t score;
-   Board board;
+   // Extra var keeps this struct a power of 2
+   uint16_t alignmentVar;
+   int hash;
 } TEntry;
 
 typedef struct

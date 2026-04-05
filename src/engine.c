@@ -63,17 +63,17 @@ int attackLines( Board* board, int8_t alpha, int8_t beta ) {
 }
 
 int alphaBeta( Board* board, int8_t alpha, int8_t beta, int8_t depthleft ) {
-    if ( depthleft == 0 ) 
+    if ( depthleft == 0 )
         return evaluateBoard(board);
     TEntry* entry = zobrist_read(board->hash);
     if (entry && entry->depth >= depthleft) {
-        return entry->score;
+        alpha = entry->score;
     }
     Move moves[MAX_MOVES_PER_POSITION];
     uint8_t numMoves = genAllLegalMoves(board, moves);
     int i;
     TEntry new_entry;
-    new_entry.board = *board;
+    new_entry.hash = board->hash;
     new_entry.depth = depthleft;
     for (i = 0; i < numMoves; ++i) {
         Move undo = boardMove(board, moves[i]);

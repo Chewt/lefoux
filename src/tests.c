@@ -60,7 +60,7 @@ TEntry* TEntryDiff(TEntry* check, TEntry* ref) {
         return NULL;
     diff_entry->score = check->score - ref->score;
     diff_entry->depth = check->depth - ref->depth;
-    diff_entry->board = (Board){ 0 };
+    diff_entry->hash = check->hash ^ ref->hash;
     return diff_entry;
 }
 
@@ -429,7 +429,7 @@ int tests()
     Zobrist zTable = {0};
     zobrist_init(&zTable);
     b = getDefaultBoard();
-    TEntry entry = { .depth = 69, .score = 67, .board = b };
+    TEntry entry = { .depth = 69, .score = 67, .hash = b.hash };
     zobrist_write_table(&zTable, b.hash, entry);
     TEntry* retrieved_entry = zobrist_read_table(&zTable, b.hash);
     RUN_TEST("Zobrist read/write", retrieved_entry, TEntry*, &entry, printTEntry, TEntryDiff, free);
