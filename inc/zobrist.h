@@ -3,15 +3,16 @@
 
 #include "board.h"
 
-// 800 bytes needed per TEntry, so good initial capacity is probably around 1GiB (0x40000000 bytes) of memory
-#define ZOBRIST_INIT_CAPACITY ((int)( 4 * (0x40000000 / sizeof(TEntry))))
-// #define ZOBRIST_INIT_CAPACITY ((int)(2048))
+// Good initial capacity is probably around 1GiB (0x40000000 bytes) of memory
+// #define ZOBRIST_INIT_CAPACITY ((int)( 4 * (0x40000000 / sizeof(TEntry))))
+// Testing with power of two capacity
+#define ZOBRIST_INIT_CAPACITY ((int)(0x8000000))
 
 typedef struct
 {
    uint8_t depth;
    int8_t score;
-   Board board;
+   uint64_t hash;
 } TEntry;
 
 typedef struct
@@ -31,10 +32,10 @@ typedef struct
 void zobrist_init(Zobrist *table);
 int zhash_board( Board *board );
 int zhash_move( Board *board, Move move );
-TEntry* zobrist_read( int hash );
-TEntry* zobrist_write( int hash, TEntry te );
-TEntry* zobrist_write_table( Zobrist *table, int hash, TEntry te );
-TEntry* zobrist_read_table(Zobrist *table, int hash);
+TEntry* zobrist_read( uint64_t hash );
+TEntry* zobrist_write( uint64_t hash, TEntry te );
+TEntry* zobrist_write_table( Zobrist *table, uint64_t hash, TEntry te );
+TEntry* zobrist_read_table(Zobrist *table, uint64_t hash);
 void zobrist_free( Zobrist *table );
 
 #endif
