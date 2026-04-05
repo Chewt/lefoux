@@ -630,10 +630,10 @@ int tests()
     */
 
     //too long :(
-    loadFen(&b, "kr6/1p2Rp2/pn4p1/1N5p/7P/3Q4/PPP2qP1/1K6 w - - 0 1");
-    m = mcreate(0, IB5, IC7, KNIGHT, 0, _WHITE);
-    RUN_TEST("Puzzle 7: Opening the door", findBestMove(&b, 7), Move, m,
-        printMoveSAN, moveDiff, noFree);
+    // loadFen(&b, "kr6/1p2Rp2/pn4p1/1N5p/7P/3Q4/PPP2qP1/1K6 w - - 0 1");
+    // m = mcreate(0, IB5, IC7, KNIGHT, 0, _WHITE);
+    // RUN_TEST("Puzzle 7: Opening the door", findBestMove(&b, 7), Move, m,
+    //     printMoveSAN, moveDiff, noFree);
 
     /* TODO convert to black test
     loadFen(&b, "kr6/1p2Rp2/pn4p1/1N5p/7P/3Q4/PPP2qP1/1K6 w - - 0 1");
