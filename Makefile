@@ -26,7 +26,7 @@ all: $(TARGET)
 autothreads: clean
 	CPUCORES=$$( cat /proc/cpuinfo | gawk 'match($$0, /cpu cores\s: (.*$$)/, groups) {print groups[1]}' | tail -1); \
 	TOTALTHREADS=$$( cat /proc/cpuinfo | gawk 'match($$0, /processor\s:(.*$$)/, groups) {print groups[1]}' | tail -1); TOTALTHREADS=$$(echo "$$TOTALTHREADS + 1" | bc);\
-	$(MAKE) XFLAGS="-DNUM_THREADS=$$CPUCORES";
+	$(MAKE) XFLAGS="-DNUM_THREADS=$$CPUCORES" release;
 
 .PHONY: single
 single: clean
