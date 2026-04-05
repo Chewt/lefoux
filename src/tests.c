@@ -440,6 +440,8 @@ int tests()
     int manualHash = zhash_board(&b);
     RUN_TEST("After Move Hash equals manual hash", b.hash, int, manualHash, printInt, intDiff, noFree);
 
+    // TODO add more tests to make sure our hash is actually working
+
     /* Evaluate Board tests */
     fprintf(stderr, " -- Evaluate Board Tests -- \n");
     loadFen(&b, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
