@@ -10,6 +10,7 @@
 #include "board.h"
 #include "bitHelpers.h"
 #include "uci.h"
+#include "zobrist.h"
 
 /*
  * Returns the net weight of pieces on the board. A positive number
@@ -62,19 +63,35 @@ int attackLines( Board* board, int8_t alpha, int8_t beta ) {
 }
 
 int alphaBeta( Board* board, int8_t alpha, int8_t beta, int8_t depthleft ) {
-    if ( depthleft == 0 ) return evaluateBoard(board);
+    if ( depthleft == 0 ) 
+        return evaluateBoard(board);
+
+    int hash = zhash_board(board);
+    TEntry* entry = zobrist_read(hash);
+    if (entry && entry->depth >= depthleft) {
+        return entry->score;
+    }
     Move moves[MAX_MOVES_PER_POSITION];
     uint8_t numMoves = genAllLegalMoves(board, moves);
     int i;
+    TEntry new_entry;
+    new_entry.board = *board;
+    new_entry.depth = depthleft;
     for (i = 0; i < numMoves; ++i) {
         Move undo = boardMove(board, moves[i]);
         int8_t weight = -alphaBeta(board, -beta, -alpha, depthleft - 1 );
         undoMove(board, undo);
         if( weight >= beta )
+        {
+            new_entry.score = beta;
+            zobrist_write(hash, new_entry);
             return beta;
+        }
         if( weight > alpha )
             alpha = weight;
     }
+    new_entry.score = alpha;
+    zobrist_write(hash, new_entry);
     return alpha;
 }
 
@@ -119,7 +136,7 @@ Move findBestMove(Board* board, uint8_t depth)
         captureMoves++;
     }
     qsort(moves, captureMoves, sizeof(Move), compareMoveWeights);
-    int8_t maxCaptureWeight = alpha;
+    // int8_t maxCaptureWeight = alpha;
 
     for (int curdepth=1; curdepth <= depth; curdepth++) {
         // Generate tasks for this loop to be parallelized

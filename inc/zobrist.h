@@ -4,7 +4,8 @@
 #include "board.h"
 
 // 800 bytes needed per TEntry, so good initial capacity is probably around 1GiB (0x40000000 bytes) of memory
-#define ZOBRIST_INIT_CAPACITY ((int)( 0x40000000 / sizeof(TEntry)))
+#define ZOBRIST_INIT_CAPACITY ((int)( 1 * 0x40000000 / sizeof(TEntry)))
+// #define ZOBRIST_INIT_CAPACITY ((int)(2048))
 
 typedef struct
 {

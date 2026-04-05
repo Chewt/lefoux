@@ -39,6 +39,7 @@ static int parse_opt (int key, char *arg, struct argp_state *state)
             memcpy(flags->fen, arg, strlen(arg));
             break;
         case 500:
+            zobrist_init(NULL);
             #pragma omp parallel
             #pragma omp single
             result = tests();

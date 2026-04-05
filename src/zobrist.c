@@ -153,53 +153,32 @@ int zhash_move( Board *board, Move move )
     return hash;
 }
 
+// should have a white KING (right?)
 int is_entry_empty(TEntry et) {
     return !et.board.pieces[KING];
 }
 
-TEntry* zobrist_read_table(Zobrist *table, int hash)
+TEntry* zobrist_get(Zobrist *table, Board* board)
 {
-    // TODO handle collisions here too
-    TEntry* entry = &table->items[hash % table->capacity];
-    return (is_entry_empty(*entry)) ? NULL : entry;
-}
-
-// Returns a pointer to the table entry. Returns NULL if the entry hasn't
-// been evaluated yet
-// Thread safe, except when table is being resized
-TEntry* zobrist_read(int hash)
-{
-    return zobrist_read_table(&g_ztable, hash);
-}
-
-TEntry* zobrist_write_table(Zobrist *table, int hash, TEntry te);
-
-// Doubles the size of the table
-// Contains a race condition with readers and writers
-void zobrist_resize(Zobrist *table)
-{
-    Zobrist new_table = {
-        .capacity = table->capacity * 2,
-        .items = calloc( table->capacity * 2, sizeof(TEntry) )
-    };
-    // Deep copy
-    for (int i=0; i < table->capacity; i++) {
-        int hash = zhash_board(  &( table->items[i].board )  );
-        zobrist_write_table( &new_table, hash, table->items[i] );
+    int hash = zhash_board(board);
+    int table_index = hash % table->capacity;
+    for (int i = 0; i < table->capacity; i++)
+    {
+        // If the boards aren't the same, check the next bucket
+        if (memcmp( &( table->items[table_index].board ), board, sizeof(Board) )) 
+        {
+            table_index = (table_index + 1) % table->capacity;
+            continue;
+        }
+        return zobrist_read_table(table, table_index);
     }
-    // Use after free race condition here for readers and writers
-    free(table->items);
-    table->capacity = new_table.capacity;
-    table->items = new_table.items;
+    return NULL;
 }
 
-// Writes the provided table entry at hash point IF the provided table
-// entry has a higher depth. Returns the table entry written to the hash
-// location (or the existing table entry if no write occurred)
-//
-// Thread UNSAFE
-TEntry* zobrist_write_table( Zobrist *table, int hash, TEntry te )
+void zobrist_resize(Zobrist *table);
+TEntry* zobrist_put(Zobrist *table, TEntry te)
 {
+    int hash = zhash_board(&te.board);
     // First check resize lock to see if table is being resized and wait until
     // it is available (no need to take the lock though, only the resize
     // function should take it)
@@ -232,7 +211,6 @@ TEntry* zobrist_write_table( Zobrist *table, int hash, TEntry te )
             continue;
         }
         // Check if the item we're looking at is a board. All boards
-        // should have a white KING (right?)
         if (is_entry_empty(table->items[table_index]))
         {
             table->items[table_index] = te;
@@ -248,6 +226,53 @@ TEntry* zobrist_write_table( Zobrist *table, int hash, TEntry te )
     // We've traversed the whole table and collided in every bucket. Time to resize
     zobrist_resize(table);
     return zobrist_write_table(table, hash, te);
+
+}
+
+TEntry* zobrist_read_table(Zobrist *table, int hash)
+{
+    TEntry* entry = &table->items[hash % table->capacity];
+    return (is_entry_empty(*entry)) ? NULL : entry;
+}
+
+// Returns a pointer to the table entry. Returns NULL if the entry hasn't
+// been evaluated yet
+// Thread safe, except when table is being resized
+TEntry* zobrist_read(int hash)
+{
+    return zobrist_read_table(&g_ztable, hash);
+}
+
+TEntry* zobrist_write_table(Zobrist *table, int hash, TEntry te);
+
+// Doubles the size of the table
+// Contains a race condition with readers and writers
+void zobrist_resize(Zobrist *table)
+{
+    Zobrist new_table = {
+        .capacity = table->capacity * 2,
+        .items = calloc( table->capacity * 2, sizeof(TEntry) )
+    };
+    // Deep copy
+    for (int i=0; i < table->capacity; i++) {
+        zobrist_put( &new_table, table->items[i] );
+    }
+    // Use after free race condition here for readers and writers
+    free(table->items);
+    table->capacity = new_table.capacity;
+    table->items = new_table.items;
+}
+
+// Writes the provided table entry at hash point IF the provided table
+// entry has a higher depth. Returns the table entry written to the hash
+// location (or the existing table entry if no write occurred)
+TEntry* zobrist_write_table( Zobrist *table, int hash, TEntry te )
+{
+    int table_index = hash % table->capacity;
+#pragma omp critical (zobristWrite)
+    if (table->items[table_index].depth < te.depth)
+        table->items[table_index] = te;
+    return &(table->items[table_index]);
 }
 
 TEntry* zobrist_write( int hash, TEntry te )
